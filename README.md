@@ -2,7 +2,7 @@
 
 Tableau de bord interactif qui compare **5 056 offres eSIM de 18 fournisseurs** (Airalo, Holafly, Saily, Ubigi…), construit en Python avec **Pandas**, **Plotly** et **Streamlit**.
 
-🔗 **Démo en ligne :** _(lien Streamlit Community Cloud à ajouter)_
+🔗 **Démo en ligne :** https://&lt;ton-pseudo&gt;.github.io/dashboard-esim/
 
 ## Indicateurs
 
@@ -27,6 +27,26 @@ Le dashboard affiche aussi la répartition par fournisseur, le prix moyen au Go 
 - Le prix au Go est calculé pour chaque offre (`prix / Go`), puis moyenné.
 - Les doublons de SKU sont supprimés.
 
+## Deux versions du dashboard
+
+| Version | Fichier | Hébergement |
+|---|---|---|
+| **Statique** (HTML + Plotly.js) | `docs/index.html`, généré par `build_site.py` | **GitHub Pages** |
+| Streamlit | `app.py` | local ou Streamlit Community Cloud |
+
+GitHub Pages ne sert que des fichiers statiques et ne peut pas exécuter Python. `build_site.py` nettoie donc les données avec `esim_data.py`, puis les injecte dans `site_template.html`. Les filtres et les indicateurs sont recalculés dans le navigateur, avec les mêmes formules que la version Python.
+
+Après une modification des CSV ou du gabarit, régénère la page :
+
+```bash
+python build_site.py
+```
+
+### Publier sur GitHub Pages
+1. Pousse le dépôt sur GitHub.
+2. **Settings → Pages → Build and deployment** : Source *Deploy from a branch*, branche `main`, dossier `/docs`, puis **Save**.
+3. Au bout d'une minute environ, le site est en ligne à l'adresse `https://<ton-pseudo>.github.io/<nom-du-depot>/`.
+
 ## Lancer en local
 
 ```bash
@@ -39,6 +59,9 @@ Pour obtenir les statistiques dans le terminal : `python esim_data.py`
 ## Structure
 
 ```
+docs/index.html         # dashboard statique (GitHub Pages)
+build_site.py           # génère docs/index.html
+site_template.html      # gabarit HTML/JS de la version statique
 app.py                  # interface Streamlit
 esim_data.py            # nettoyage + statistiques
 donnees-test-mybestsim/ # 18 fichiers CSV sources
