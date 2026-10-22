@@ -1,0 +1,200 @@
+<!doctype html>
+<!--
+  Gabarit du dashboard eSIM. build_site.py remplace les marqueurs entourés de deux tirets bas :
+    STYLES      par le contenu de site/styles.css
+    SCRIPT      par les fichiers de site/js/ (données, config, état, fonctions, démarrage)
+    DATA        par les offres nettoyées (format compact)
+    TOTAL, PROVIDERS, FILES, BUILT, REPO_LINK  par les informations du build
+  Le résultat est un seul fichier, docs/index.html, servi par GitHub Pages.
+-->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comparateur eSIM</title>
+<meta name="description"
+  content="Dashboard interactif comparant __TOTAL__ offres eSIM de __PROVIDERS__ fournisseurs.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📶</text></svg>">
+<!-- Plotly : bibliothèque des graphiques interactifs -->
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<style>
+__STYLES__
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- En-tête : titre, nombre d'offres chargées, bascule de thème -->
+  <header>
+    <div>
+      <h1>📶 Comparateur d'offres eSIM</h1>
+      <p class="sub" id="subtitle"></p>
+    </div>
+    <button class="btn" id="theme-toggle" type="button"
+      aria-label="Changer de thème">◐ Thème</button>
+  </header>
+
+  <!-- Panneau « Données » : source chargée, import (fichier, URL), export -->
+  <section class="card data-panel" aria-labelledby="data-title">
+    <div class="dp-head">
+      <div><h2 id="data-title">Données</h2><p class="note" id="source-info"></p></div>
+      <div class="dp-actions">
+        <button class="btn" id="export-json" type="button">Exporter JSON</button>
+        <button class="btn" id="export-csv" type="button">Exporter CSV</button>
+      </div>
+    </div>
+    <div class="dp-row">
+      <button class="btn primary" id="file-btn" type="button">
+        Importer un fichier CSV / JSON</button>
+      <input type="file" id="file-input" accept=".csv,.json,text/csv,application/json"
+        multiple hidden>
+      <form class="api-form" id="api-form">
+        <input type="url" id="api-url" placeholder="https://mon-api.com/offres (JSON ou CSV)"
+          aria-label="URL de l'API à importer">
+        <button class="btn" type="submit">Charger l'API</button>
+      </form>
+      <div class="chips" id="import-mode" role="group" aria-label="Mode d'import"></div>
+      <button class="btn" id="restore" type="button" hidden>Données d'origine</button>
+    </div>
+    <p id="import-status" role="status" aria-live="polite"></p>
+    <details class="api-doc">
+      <summary>Formats acceptés et API de ce dashboard</summary>
+      <p>Import : CSV (séparateur <code>,</code> ou <code>;</code>) ou JSON (liste d'offres ou
+        <code>{"offers": [...]}</code>). Seule la colonne <code>price</code> / <code>prix</code>
+        est obligatoire ; les colonnes françaises (fournisseur, destination, data, validité,
+        réseau, recharge) sont reconnues. Les fichiers restent dans ton navigateur, rien n'est
+        envoyé. Glisser-déposer accepté. Pour charger une API au démarrage :
+        <code>?source=https://…</code></p>
+      <p>Export en lecture seule (données d'origine), utilisable depuis n'importe quel site
+        ou script :</p>
+      <ul id="api-links"></ul>
+    </details>
+  </section>
+
+  <!-- Filtres du haut : s'appliquent aux KPI, aux graphiques et aux tableaux -->
+  <div class="filters" role="group" aria-label="Filtres">
+    <div class="field"><span>Fournisseurs</span>
+      <details class="multi" id="f-provider">
+        <summary>Tous</summary><div class="menu"></div>
+      </details>
+    </div>
+    <div class="field"><span>Destinations</span>
+      <details class="multi" id="f-country">
+        <summary>Toutes</summary><div class="menu"></div>
+      </details>
+    </div>
+    <div class="field"><span>Validité</span><div class="chips" id="f-validity"></div></div>
+    <div class="field"><span>Réseau</span><div class="chips" id="f-network"></div></div>
+    <div class="field"><span>Forfait</span><div class="chips" id="f-kind"></div></div>
+    <div class="field"><span>Prix (€)</span>
+      <div class="price-inputs">
+        <input type="number" id="f-pmin" step="1" aria-label="Prix minimum"> –
+        <input type="number" id="f-pmax" step="1" aria-label="Prix maximum">
+      </div>
+    </div>
+    <button class="btn" id="reset" type="button">Réinitialiser</button>
+  </div>
+
+  <!-- Cartes d'indicateurs (remplies par renderKpis) -->
+  <div class="kpis" id="kpis"></div>
+
+  <div id="content">
+    <!-- Graphiques par fournisseur (masqués quand un seul fournisseur est affiché) -->
+    <div class="grid2" id="provider-charts">
+      <div class="card">
+        <h2>Nombre d'offres par fournisseur</h2>
+        <p class="note chart-hint">Clique sur une barre pour voir le résumé</p>
+        <div class="chart tall" id="c-count"></div>
+        <p class="legend"><span><i class="sw ramp"></i>plus foncé = plus d'offres</span></p>
+      </div>
+      <div class="card">
+        <h2>Prix moyen au Go par fournisseur</h2>
+        <p class="note chart-hint">Clique sur une barre pour voir le résumé</p>
+        <div class="chart tall" id="c-pergb"></div>
+        <p class="legend">
+          <span><i class="sw" style="--c: var(--c-blue)"></i>moins cher que la moyenne</span>
+          <span><i class="sw" style="--c: var(--c-red)"></i>plus cher que la moyenne</span>
+          <span><i class="sw line"></i>moyenne</span>
+        </p>
+        <p class="note">Plus la barre est courte, moins le Go est cher.
+          Forfaits illimités exclus.</p>
+      </div>
+    </div>
+    <!-- Graphiques des prix -->
+    <div class="grid2">
+      <div class="card c-orange">
+        <h2>Distribution des prix</h2>
+        <p class="note chart-hint">Clique sur une barre pour voir le résumé</p>
+        <div class="chart" id="c-hist"></div>
+        <p class="legend">
+          <span><i class="sw" style="--c: var(--c-blue)"></i>jusqu'à 100 €</span>
+          <span><i class="sw" style="--c: var(--c-orange)"></i>plus de 100 €</span>
+        </p>
+      </div>
+      <div class="card c-aqua">
+        <h2>Prix médian selon le volume de data</h2>
+        <p class="note chart-hint">Clique sur une barre pour voir le résumé</p>
+        <div class="chart" id="c-volume"></div>
+        <p class="legend">
+          <span><i class="sw ramp"></i>volume croissant</span>
+          <span><i class="sw" style="--c: var(--c-violet)"></i>illimité</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Tableau par fournisseur (fournisseur cliquable) -->
+    <section class="card c-violet">
+      <h2>Répartition par fournisseur</h2>
+      <p class="note">Clique sur un fournisseur pour filtrer la liste des offres.</p>
+      <div class="table-wrap"><table id="t-providers"></table></div>
+    </section>
+
+    <!-- Liste de toutes les offres : recherche multicritère, valeurs cliquables, pagination -->
+    <section class="card c-magenta">
+      <h2 id="offers-title">Toutes les offres</h2>
+      <div class="toolbar">
+        <input class="search" id="search" type="search"
+          placeholder="Ex. : japon 5g <20€ >=5go 30j -holafly"
+          aria-label="Rechercher avec plusieurs critères" aria-describedby="search-help">
+        <div class="pager">
+          <button class="btn" id="prev" type="button" aria-label="Page précédente">←</button>
+          <span id="page-info"></span>
+          <button class="btn" id="next" type="button" aria-label="Page suivante">→</button>
+          <button class="btn" id="download" type="button">Télécharger CSV</button>
+        </div>
+      </div>
+      <div class="picks" id="picks" aria-live="polite"></div>
+      <p class="note" id="search-help">Combine les critères avec des espaces : texte
+        (<code>japon</code>, <code>"afrique du sud"</code>), prix (<code>&lt;20€</code>,
+        <code>10-30€</code>), data (<code>&gt;=5go</code>, <code>500mo</code>,
+        <code>illimité</code>), validité (<code>30j</code>), réseau (<code>5g</code>),
+        <code>recharge</code>. Virgule = « ou » (<code>japon,corée</code>), <code>-</code> = exclure
+        (<code>-holafly</code>). Clique sur une valeur du tableau pour l'ajouter comme filtre.</p>
+      <div class="table-wrap"><table id="t-offers"></table></div>
+    </section>
+  </div>
+  <div class="empty" id="empty" hidden>Aucune offre ne correspond aux filtres.</div>
+
+  <!-- Panneau de résumé ouvert par un clic sur un graphique -->
+  <dialog id="summary" class="drawer" aria-labelledby="sum-title">
+    <div class="drawer-head">
+      <div>
+        <p class="eyebrow" id="sum-kind"></p>
+        <h2 id="sum-title"></h2>
+        <p class="note" id="sum-sub"></p>
+      </div>
+      <button class="btn close-btn" id="sum-close" type="button"
+        aria-label="Fermer le résumé">✕</button>
+    </div>
+    <div class="drawer-body" id="sum-body"></div>
+    <div class="drawer-actions" id="sum-actions"></div>
+  </dialog>
+
+  <footer>Données : __FILES__ fichiers CSV nettoyés avec Python / Pandas · généré le __BUILT__ ·
+    <a href="api/index.json">API JSON</a>__REPO_LINK__</footer>
+</div>
+
+<script>
+__SCRIPT__
+</script>
+</body>
+</html>

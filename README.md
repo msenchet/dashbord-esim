@@ -43,7 +43,7 @@ Exemple : `japon,corée >=10go 30j <40€ -airalo`
 
 On peut aussi **cliquer sur une valeur** du tableau (fournisseur, destination, data, validité, réseau, recharge) ou sur un fournisseur dans la « Répartition » pour l'ajouter comme filtre. Deux valeurs de la même colonne se combinent en « ou », des colonnes différentes en « et ». Les critères actifs s'affichent en pastilles : clique sur ✕ pour en retirer un. L'export CSV reprend la liste filtrée.
 
-## Méthode de nettoyage (`esim_data.py`)
+## Méthode de nettoyage (paquet `esim/`)
 
 - Lecture automatique de tous les `.csv` du dossier, avec détection du séparateur (`,` ou `;`).
 - Nom du fournisseur pris dans la colonne `provider`, ou à défaut dans le nom du fichier.
@@ -60,9 +60,9 @@ On peut aussi **cliquer sur une valeur** du tableau (fournisseur, destination, d
 | **Statique** (HTML + Plotly.js) | `docs/index.html`, généré par `build_site.py` | **GitHub Pages** |
 | Streamlit | `app.py` | local ou Streamlit Community Cloud |
 
-GitHub Pages ne sert que des fichiers statiques et ne peut pas exécuter Python. `build_site.py` nettoie donc les données avec `esim_data.py`, puis les injecte dans `site_template.html`. Les filtres et les indicateurs sont recalculés dans le navigateur, avec les mêmes formules que la version Python.
+GitHub Pages ne sert que des fichiers statiques et ne peut pas exécuter Python. `build_site.py` nettoie donc les données avec le paquet `esim/`. Il assemble ensuite le gabarit `site/index.html`, les styles `site/styles.css` et les scripts de `site/js/` en une seule page. Les filtres et les indicateurs sont recalculés dans le navigateur, avec les mêmes formules que la version Python.
 
-Après une modification des CSV ou du gabarit, régénère la page :
+Après une modification des CSV ou de `site/`, régénère la page :
 
 ```bash
 python build_site.py
@@ -96,7 +96,7 @@ Formats acceptés : CSV avec `,` ou `;`, ou JSON (liste d'offres, ou `{"offers":
 | `api/providers.json` | répartition par fournisseur + €/Go |
 | `api/index.json` | description des routes |
 
-### API REST dynamique (`api.py`, FastAPI)
+### API REST dynamique (paquet `esim_api/`, FastAPI)
 Elle permet d'importer par programme et de filtrer côté serveur. GitHub Pages ne peut pas l'exécuter : lance-la en local ou héberge-la (Render, voir plus bas).
 
 ```bash
@@ -134,21 +134,46 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Pour obtenir les statistiques dans le terminal : `python esim_data.py`
+Pour obtenir les statistiques dans le terminal : `python rapport.py`
 
 La version Streamlit accepte aussi l'import de fichiers et d'URL d'API (barre latérale), ainsi que l'export CSV et JSON.
+
+## Normes du code
+
+Les fichiers de fonctions suivent trois règles : **une seule fonction nommée par fichier**, **80 lignes au maximum** et **100 caractères par ligne au maximum**. Chaque fichier porte le nom de sa fonction. Les fonctions anonymes passées en argument (`rows.map(o => …)`, gestionnaires d'événements) font partie de la fonction qui les contient.
+
+Les autres fichiers (constantes, état, assemblage, HTML, CSS) ne contiennent aucune fonction. Toutes les variables y sont documentées en français. Pour tout vérifier :
+
+```bash
+python outils/verifier_normes.py
+```
 
 ## Structure
 
 ```
-docs/index.html         # dashboard statique (GitHub Pages)
-docs/api/                # API statique en lecture seule (générée)
-api.py                  # API REST FastAPI (import + export)
+esim/                   # moteur : nettoyage (toutes sources) + statistiques, 1 fonction par fichier
+  config.py             #   constantes (chemins, seuil 100 €, alias de colonnes…)
+esim_api/               # API REST FastAPI, une route par fichier
+  app.py                #   création de l'application et déclaration des routes
+  config.py, store.py, models.py   # réglages, données en mémoire, structures échangées
+site/                   # sources du dashboard statique
+  index.html            #   gabarit HTML
+  styles.css            #   styles et couleurs (clair / sombre)
+  js/donnees.js         #   données injectées au build
+  js/config.js          #   constantes
+  js/etat.js            #   état de la page
+  js/fonctions/*.js     #   une fonction par fichier
+  js/main.js            #   démarrage de la page
+site_builder/           # génération de docs/ (1 fonction par fichier)
+streamlit_ui/           # briques de l'application Streamlit (1 fonction par fichier)
+outils/verifier_normes.py  # contrôle des normes du code
+docs/index.html         # dashboard généré (GitHub Pages)
+docs/api/               # API statique en lecture seule (générée)
+app.py                  # application Streamlit
+api.py                  # point d'entrée de l'API (uvicorn api:app)
+build_site.py           # génère docs/
+rapport.py              # statistiques dans le terminal
 render.yaml             # déploiement de l'API sur Render
-build_site.py           # génère docs/index.html
-site_template.html      # gabarit HTML/JS de la version statique
-app.py                  # interface Streamlit
-esim_data.py            # nettoyage (toutes sources) + statistiques
 donnees-test-mybestsim/ # 18 fichiers CSV sources
 requirements.txt
 ```
