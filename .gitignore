@@ -1,5 +1,72 @@
+# Fichiers à ne jamais publier sur GitHub.
+# Vérifier ce qui sera envoyé avant un push :  git status   puis   git status --ignored
+
+# ---------- Secrets et identifiants ----------
+# Variables d'environnement locales (ESIM_API_KEY, jetons…)
+.env
+.env.*
+!.env.example
+# Secrets de Streamlit (Streamlit Community Cloud les gère dans son interface)
+.streamlit/secrets.toml
+# Clés, certificats et coffres de mots de passe
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.kdbx
+id_rsa*
+id_ed25519*
+# Fichiers de notes contenant des identifiants
+*secret*
+*password*
+*mot_de_passe*
+*credentials*
+
+# ---------- Python ----------
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+# Environnements virtuels
 .venv/
 venv/
+env/
+# Caches des outils de test et d'analyse
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# ---------- JavaScript (si des outils Node sont ajoutés) ----------
+node_modules/
+npm-debug.log*
+
+# ---------- Éditeurs ----------
+.vscode/
+.idea/
+*.swp
+*~
+# Réglages locaux de Claude Code (permissions, préférences de cette machine)
+.claude/settings.local.json
+
+# ---------- Système ----------
+Thumbs.db
+desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+
+# ---------- Fichiers produits en local ----------
+# Archive d'origine des données (les CSV extraits, eux, sont publiés)
 *.zip
+# Exports téléchargés depuis le dashboard ou Streamlit
+offres_esim*.csv
+offres_esim*.json
+# Journaux et fichiers temporaires
+*.log
+*.tmp
+*.bak
