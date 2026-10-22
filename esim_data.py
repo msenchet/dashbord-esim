@@ -4,8 +4,11 @@ Usage en ligne de commande :  python esim_data.py [dossier_csv]
 """
 from __future__ import annotations
 
+import io
+import json
 import re
 import sys
+import unicodedata
 from pathlib import Path
 
 import numpy as np
@@ -67,46 +70,135 @@ def provider_from_filename(path: Path) -> str:
     return path.stem.replace("_", " ").replace("-", " ").strip().title()
 
 
-def read_csv_any_separator(path: Path) -> pd.DataFrame:
-    # sep=None laisse pandas détecter , ou ; automatiquement.
-    return pd.read_csv(path, sep=None, engine="python", dtype=str,
+# Noms de colonnes acceptés à l'import -> nom interne
+COLUMN_ALIASES = {
+    "fournisseur": "provider", "operateur": "provider",
+    "offre": "product_name", "nom": "product_name", "name": "product_name",
+    "pays": "country_name", "destination": "country_name", "country": "country_name",
+    "data": "data_display", "volume": "data_display",
+    "data_go": "data_gb", "go": "data_gb",
+    "validite": "validity_days", "validite_jours": "validity_days", "validity": "validity_days", "duree": "validity_days",
+    "prix": "price", "prix_eur": "price",
+    "reseau": "network", "recharge": "top_up", "devise": "currency", "illimite": "is_unlimited",
+}
+TRUE_WORDS = ["oui", "yes", "true", "1", "vrai"]
+EXPORT_COLUMNS = ["sku", "provider", "product_name", "country_code", "country_name", "data_gb", "data_display",
+                  "is_unlimited", "validity_days", "price", "currency", "price_per_gb", "network", "top_up"]
+
+
+def normalize_column(name) -> str:
+    """'Validité (jours)' -> 'validite_jours', puis application des alias."""
+    text = unicodedata.normalize("NFKD", str(name)).encode("ascii", "ignore").decode()
+    text = re.sub(r"[^a-z0-9]+", "_", text.strip().lower()).strip("_")
+    return COLUMN_ALIASES.get(text, text)
+
+
+def read_csv_any_separator(source) -> pd.DataFrame:
+    """Lit un chemin ou un flux CSV ; sep=None laisse pandas détecter , ou ; automatiquement."""
+    return pd.read_csv(source, sep=None, engine="python", dtype=str,
                        encoding="utf-8-sig", skip_blank_lines=True)
+
+
+def records_from_json(payload) -> pd.DataFrame:
+    """Accepte une liste d'offres, {"offers": [...]} (format de l'API) ou {"data": [...]}."""
+    if isinstance(payload, dict):
+        payload = payload.get("offers", payload.get("data", payload.get("items")))
+    if not isinstance(payload, list):
+        raise ValueError("JSON attendu : une liste d'offres ou un objet {\"offers\": [...]}")
+    return pd.DataFrame(payload)
+
+
+def read_any(content: bytes, filename: str) -> pd.DataFrame:
+    """Lit un fichier importé (CSV ou JSON) à partir de son contenu brut."""
+    text = content.decode("utf-8-sig", errors="replace")
+    if filename.lower().endswith(".json") or text.lstrip()[:1] in "[{":
+        return records_from_json(json.loads(text))
+    return read_csv_any_separator(io.StringIO(text))
+
+
+def prepare_frame(df: pd.DataFrame, source_name: str) -> pd.DataFrame:
+    """Harmonise les colonnes d'une source et complète le fournisseur depuis le nom de fichier."""
+    df = df.copy()
+    df.columns = [normalize_column(c) for c in df.columns]
+    df = df.loc[:, ~df.columns.duplicated()]
+    fallback = provider_from_filename(Path(source_name))
+    if "provider" not in df.columns:
+        df["provider"] = fallback
+    df["provider"] = df["provider"].astype("string").str.strip().replace("", pd.NA).fillna(fallback)
+    df["source_file"] = source_name
+    return df
+
+
+def text_column(offers: pd.DataFrame, col: str) -> pd.Series:
+    if col not in offers.columns:
+        return pd.Series(pd.NA, index=offers.index, dtype="string")
+    return offers[col].astype("string").str.strip().replace("", pd.NA)
+
+
+def clean_offers(offers: pd.DataFrame) -> pd.DataFrame:
+    """Convertit des offres brutes (toutes sources confondues) en DataFrame propre et typé."""
+    if "price" not in offers.columns:
+        raise ValueError("Colonne de prix introuvable (attendu : price ou prix)")
+    offers = offers.reset_index(drop=True).copy()
+
+    offers["price"] = offers["price"].map(parse_price)
+    display = text_column(offers, "data_display")
+    gb_raw = offers["data_gb"] if "data_gb" in offers.columns else pd.Series(np.nan, index=offers.index)
+    parsed = [parse_data_gb(gb, None if pd.isna(disp) else disp) for gb, disp in zip(gb_raw, display)]
+    offers["data_gb"] = [gb for gb, _ in parsed]
+    flagged = text_column(offers, "is_unlimited").str.lower().isin(TRUE_WORDS).fillna(False)
+    offers["is_unlimited"] = [unl for _, unl in parsed] | flagged.to_numpy(dtype=bool)
+    offers.loc[offers["is_unlimited"], "data_gb"] = np.nan
+    offers["data_display"] = display.fillna(
+        pd.Series([f"{gb:g} Go" if pd.notna(gb) else "N/C" for gb in offers["data_gb"]], index=offers.index))
+    offers.loc[offers["is_unlimited"], "data_display"] = "Illimité"
+
+    offers["validity_days"] = pd.to_numeric(text_column(offers, "validity_days").str.extract(r"(\d+)")[0],
+                                            errors="coerce").astype("Int64")
+    offers["top_up"] = text_column(offers, "top_up").str.lower().isin(TRUE_WORDS).fillna(False).astype(bool)
+    offers["price_per_gb"] = offers["price"] / offers["data_gb"].where(offers["data_gb"] > 0)  # NaN pour l'illimité
+
+    for col in ["product_name", "country_code", "country_name", "network", "currency", "sku"]:
+        offers[col] = text_column(offers, col)
+    offers["country_name"] = offers["country_name"].fillna("Inconnu")
+    offers["network"] = offers["network"].fillna("N/C")
+    offers["currency"] = offers["currency"].fillna("EUR")
+    validity_txt = (" " + offers["validity_days"].astype("string") + " jours").fillna("")
+    offers["product_name"] = offers["product_name"].fillna(
+        "eSIM " + offers["country_name"] + " " + offers["data_display"] + validity_txt)
+    # Offres sans identifiant : on en fabrique un stable (fournisseur + contenu).
+    generated = (offers["provider"].str.lower().str.replace(r"\W+", "-", regex=True) + "-"
+                 + pd.util.hash_pandas_object(offers[["product_name", "price"]], index=False).astype(str))
+    offers["sku"] = offers["sku"].fillna(generated)
+
+    offers = offers.dropna(subset=["price"]).drop_duplicates(subset=["sku"], keep="last")
+    for col in ["provider", "product_name", "country_code", "country_name", "data_display",
+                "network", "currency", "sku", "source_file"]:
+        offers[col] = offers[col].astype(object).where(offers[col].notna(), None)
+    return offers.reset_index(drop=True)
 
 
 def load_offers(folder: Path | str = DATA_DIR) -> pd.DataFrame:
     """Lit tous les CSV du dossier et renvoie un DataFrame propre et typé."""
     folder = Path(folder)
-    frames = []
-    for path in sorted(folder.glob("*.csv")):
-        df = read_csv_any_separator(path)
-        df.columns = [c.strip().lower() for c in df.columns]
-        if "provider" not in df.columns or df["provider"].isna().all():
-            df["provider"] = provider_from_filename(path)
-        df["provider"] = df["provider"].fillna(provider_from_filename(path)).str.strip()
-        df["source_file"] = path.name
-        frames.append(df)
-
+    frames = [prepare_frame(read_csv_any_separator(path), path.name) for path in sorted(folder.glob("*.csv"))]
     if not frames:
         raise FileNotFoundError(f"Aucun fichier .csv trouvé dans {folder}")
+    return clean_offers(pd.concat(frames, ignore_index=True))
 
-    offers = pd.concat(frames, ignore_index=True)
 
-    offers["price"] = offers["price"].map(parse_price)
-    parsed = [parse_data_gb(gb, disp) for gb, disp in
-              zip(offers.get("data_gb"), offers.get("data_display", pd.Series(index=offers.index)))]
-    offers["data_gb"] = [gb for gb, _ in parsed]
-    offers["is_unlimited"] = [unl for _, unl in parsed]
-    offers["validity_days"] = pd.to_numeric(offers["validity_days"].str.extract(r"(\d+)")[0],
-                                            errors="coerce").astype("Int64")
-    offers["top_up"] = offers["top_up"].str.strip().str.lower().isin(["oui", "yes", "true", "1"])
-    offers["price_per_gb"] = offers["price"] / offers["data_gb"]  # NaN pour l'illimité
-
-    for col in ["product_name", "country_code", "country_name", "network", "currency"]:
-        if col in offers.columns:
-            offers[col] = offers[col].str.strip()
-
-    offers = offers.dropna(subset=["price"]).drop_duplicates(subset=["sku"] if "sku" in offers else None)
-    return offers.reset_index(drop=True)
+def to_records(offers: pd.DataFrame) -> list[dict]:
+    """Offres au format JSON de l'API (NaN -> null)."""
+    out = offers[EXPORT_COLUMNS].astype(object)
+    out = out.where(pd.notna(out), None)
+    records = out.to_dict(orient="records")
+    for r in records:
+        for key in ("price", "data_gb", "price_per_gb"):
+            if r[key] is not None:
+                r[key] = round(float(r[key]), 4 if key == "price_per_gb" else 3)
+        r["validity_days"] = None if r["validity_days"] is None else int(r["validity_days"])
+        r["is_unlimited"], r["top_up"] = bool(r["is_unlimited"]), bool(r["top_up"])
+    return records
 
 
 def compute_stats(offers: pd.DataFrame) -> dict:

@@ -1,0 +1,27 @@
+{
+ "name": "API eSIM (statique, lecture seule)",
+ "generated_at": "2026-10-22T18:04:45+00:00",
+ "routes": {
+  "offers.json": "toutes les offres : {total, offers: [...]}",
+  "offers.csv": "toutes les offres au format CSV",
+  "stats.json": "les 6 statistiques + KPIs bonus",
+  "providers.json": "répartition par fournisseur avec prix moyen au Go"
+ },
+ "fields": [
+  "sku",
+  "provider",
+  "product_name",
+  "country_code",
+  "country_name",
+  "data_gb",
+  "data_display",
+  "is_unlimited",
+  "validity_days",
+  "price",
+  "currency",
+  "price_per_gb",
+  "network",
+  "top_up"
+ ],
+ "note": "Pour importer, filtrer côté serveur ou écrire, utiliser l'API dynamique api.py (FastAPI)."
+}

@@ -1,0 +1,11 @@
+# Déploiement de l'API sur Render : New + > Blueprint > choisir ce dépôt
+services:
+  - type: web
+    name: esim-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ESIM_API_KEY
+        generateValue: true

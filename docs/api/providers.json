@@ -1,0 +1,185 @@
+{
+ "generated_at": "2026-10-22T18:04:45+00:00",
+ "providers": [
+  {
+   "provider": "Airalo",
+   "offres": 722,
+   "part_%": 14.2801,
+   "prix_moyen": 27.047,
+   "prix_min": 5.38,
+   "prix_max": 136.98,
+   "offres_illimitees": 91,
+   "prix_moyen_par_go": 3.3753
+  },
+  {
+   "provider": "Ubigi",
+   "offres": 562,
+   "part_%": 11.1155,
+   "prix_moyen": 29.7595,
+   "prix_min": 5.39,
+   "prix_max": 142.88,
+   "offres_illimitees": 68,
+   "prix_moyen_par_go": 3.0299
+  },
+  {
+   "provider": "eSIMX",
+   "offres": 432,
+   "part_%": 8.5443,
+   "prix_moyen": 29.328,
+   "prix_min": 5.36,
+   "prix_max": 136.53,
+   "offres_illimitees": 55,
+   "prix_moyen_par_go": 3.1489
+  },
+  {
+   "provider": "Saily",
+   "offres": 382,
+   "part_%": 7.5554,
+   "prix_moyen": 28.8587,
+   "prix_min": 5.49,
+   "prix_max": 142.02,
+   "offres_illimitees": 56,
+   "prix_moyen_par_go": 3.2234
+  },
+  {
+   "provider": "GigSky",
+   "offres": 342,
+   "part_%": 6.7642,
+   "prix_moyen": 30.6679,
+   "prix_min": 5.36,
+   "prix_max": 149.53,
+   "offres_illimitees": 44,
+   "prix_moyen_par_go": 3.07
+  },
+  {
+   "provider": "Nomad",
+   "offres": 312,
+   "part_%": 6.1709,
+   "prix_moyen": 30.2137,
+   "prix_min": 5.38,
+   "prix_max": 130.15,
+   "offres_illimitees": 45,
+   "prix_moyen_par_go": 3.1169
+  },
+  {
+   "provider": "Instabridge",
+   "offres": 282,
+   "part_%": 5.5775,
+   "prix_moyen": 30.1909,
+   "prix_min": 5.4,
+   "prix_max": 141.03,
+   "offres_illimitees": 33,
+   "prix_moyen_par_go": 3.1929
+  },
+  {
+   "provider": "aloSIM",
+   "offres": 262,
+   "part_%": 5.182,
+   "prix_moyen": 30.7147,
+   "prix_min": 5.36,
+   "prix_max": 154.63,
+   "offres_illimitees": 37,
+   "prix_moyen_par_go": 3.1563
+  },
+  {
+   "provider": "Holafly",
+   "offres": 242,
+   "part_%": 4.7864,
+   "prix_moyen": 27.9792,
+   "prix_min": 5.37,
+   "prix_max": 126.91,
+   "offres_illimitees": 29,
+   "prix_moyen_par_go": 3.2617
+  },
+  {
+   "provider": "Yesim",
+   "offres": 222,
+   "part_%": 4.3908,
+   "prix_moyen": 32.1005,
+   "prix_min": 5.36,
+   "prix_max": 153.22,
+   "offres_illimitees": 28,
+   "prix_moyen_par_go": 2.9363
+  },
+  {
+   "provider": "Jetpac",
+   "offres": 212,
+   "part_%": 4.193,
+   "prix_moyen": 29.9412,
+   "prix_min": 5.53,
+   "prix_max": 135.33,
+   "offres_illimitees": 28,
+   "prix_moyen_par_go": 3.0674
+  },
+  {
+   "provider": "Truphone",
+   "offres": 202,
+   "part_%": 3.9953,
+   "prix_moyen": 27.4094,
+   "prix_min": 5.47,
+   "prix_max": 152.96,
+   "offres_illimitees": 25,
+   "prix_moyen_par_go": 3.3464
+  },
+  {
+   "provider": "JamboSIM",
+   "offres": 182,
+   "part_%": 3.5997,
+   "prix_moyen": 30.9764,
+   "prix_min": 5.46,
+   "prix_max": 140.24,
+   "offres_illimitees": 25,
+   "prix_moyen_par_go": 2.9031
+  },
+  {
+   "provider": "Flexiroam",
+   "offres": 172,
+   "part_%": 3.4019,
+   "prix_moyen": 31.3117,
+   "prix_min": 5.38,
+   "prix_max": 134.79,
+   "offres_illimitees": 28,
+   "prix_moyen_par_go": 3.1401
+  },
+  {
+   "provider": "Yatelo",
+   "offres": 162,
+   "part_%": 3.2041,
+   "prix_moyen": 30.1331,
+   "prix_min": 5.54,
+   "prix_max": 143.83,
+   "offres_illimitees": 21,
+   "prix_moyen_par_go": 3.2165
+  },
+  {
+   "provider": "Maya Mobile",
+   "offres": 152,
+   "part_%": 3.0063,
+   "prix_moyen": 28.9091,
+   "prix_min": 5.98,
+   "prix_max": 141.99,
+   "offres_illimitees": 18,
+   "prix_moyen_par_go": 3.1421
+  },
+  {
+   "provider": "Roamic",
+   "offres": 122,
+   "part_%": 2.413,
+   "prix_moyen": 27.9665,
+   "prix_min": 5.95,
+   "prix_max": 147.07,
+   "offres_illimitees": 13,
+   "prix_moyen_par_go": 3.2079
+  },
+  {
+   "provider": "4S eSIM",
+   "offres": 92,
+   "part_%": 1.8196,
+   "prix_moyen": 24.2609,
+   "prix_min": 5.6,
+   "prix_max": 128.8,
+   "offres_illimitees": 9,
+   "prix_moyen_par_go": 3.5886
+  }
+ ]
+}

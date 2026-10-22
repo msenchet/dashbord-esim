@@ -1,10 +1,14 @@
 """Dashboard Streamlit des offres eSIM.  Lancer : streamlit run app.py"""
+import json
 import math
 
+import httpx
+import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from esim_data import EXPENSIVE_THRESHOLD, compute_stats, load_offers, provider_breakdown
+from esim_data import (EXPENSIVE_THRESHOLD, clean_offers, compute_stats, load_offers, prepare_frame,
+                       provider_breakdown, read_any, to_records)
 
 st.set_page_config(page_title="Dashboard eSIM", page_icon="📶", layout="wide")
 
@@ -29,7 +33,41 @@ def get_offers():
     return load_offers()
 
 
+@st.cache_data(show_spinner="Import des données…")
+def import_sources(files: tuple[tuple[str, bytes], ...]):
+    frames = [prepare_frame(read_any(content, name), name) for name, content in files]
+    return clean_offers(pd.concat(frames, ignore_index=True))
+
+
+@st.cache_data(ttl=300, show_spinner="Appel de l'API…")
+def fetch_url(url: str) -> tuple[str, bytes]:
+    resp = httpx.get(url, timeout=20, follow_redirects=True)
+    resp.raise_for_status()
+    name = url.split("?")[0].rstrip("/").rsplit("/", 1)[-1] or "api"
+    if "json" in resp.headers.get("content-type", "") and not name.endswith(".json"):
+        name += ".json"
+    return name, resp.content
+
+
 offers = get_offers()
+
+# ---------- Import ----------
+with st.sidebar:
+    st.header("Données")
+    uploads = st.file_uploader("Importer des fichiers CSV / JSON", type=["csv", "json"], accept_multiple_files=True)
+    api_url = st.text_input("…ou l'URL d'une API (JSON / CSV)", placeholder="https://mon-api.com/offres")
+    replace = st.toggle("Remplacer les données d'origine", value=False)
+    sources = [(f.name, f.getvalue()) for f in uploads or []]
+    try:
+        if api_url:
+            sources.append(fetch_url(api_url))
+        if sources:
+            imported = import_sources(tuple(sources))
+            offers = imported if replace else (pd.concat([offers, imported], ignore_index=True)
+                                               .drop_duplicates(subset=["sku"], keep="last"))
+            st.success(f"{len(imported)} offres importées depuis {len(sources)} source(s)")
+    except Exception as exc:
+        st.error(f"Import impossible : {exc}")
 
 # ---------- Filtres ----------
 with st.sidebar:
@@ -62,7 +100,7 @@ df = offers[mask]
 
 st.title("📶 Comparateur d'offres eSIM")
 st.caption(f"{len(offers):,} offres de {offers['provider'].nunique()} fournisseurs, "
-           f"issues de {offers['source_file'].nunique()} fichiers CSV · prix en EUR".replace(",", " "))
+           f"issues de {offers['source_file'].nunique()} sources · prix en EUR".replace(",", " "))
 
 if df.empty:
     st.warning("Aucune offre ne correspond aux filtres.")
@@ -183,6 +221,12 @@ st.dataframe(
         "top_up": st.column_config.CheckboxColumn("Recharge"),
     },
 )
-st.download_button("Télécharger les offres filtrées (CSV)",
-                   table[columns].to_csv(index=False).encode("utf-8-sig"),
-                   file_name="offres_esim_filtrees.csv", mime="text/csv")
+export = st.columns(2)
+export[0].download_button("Télécharger les offres filtrées (CSV)",
+                          pd.DataFrame(to_records(table)).to_csv(index=False).encode("utf-8-sig"),
+                          file_name="offres_esim_filtrees.csv", mime="text/csv")
+export[1].download_button("Télécharger les offres filtrées (JSON)",
+                          json.dumps({"total": len(table), "stats": {k: None if pd.isna(v) else float(v)
+                                                                     for k, v in compute_stats(table).items()},
+                                      "offers": to_records(table)}, ensure_ascii=False, indent=1),
+                          file_name="offres_esim_filtrees.json", mime="application/json")
