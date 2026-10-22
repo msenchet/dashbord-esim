@@ -1,6 +1,6 @@
 {
  "name": "API eSIM (statique, lecture seule)",
- "generated_at": "2026-10-22T18:25:35+00:00",
+ "generated_at": "2026-10-22T18:27:55+00:00",
  "routes": {
   "offers.json": "toutes les offres : {total, offers: [...]}",
   "offers.csv": "toutes les offres au format CSV",

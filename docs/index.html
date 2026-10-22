@@ -742,7 +742,7 @@ function baseLayout(extra = {}) {
   return Object.assign({
     paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
     font: { family: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif", color: css("--text-2"), size: 13 },
-    margin: { l: 8, r: 16, t: 8, b: 8 }, bargap: 0.25, showlegend: false,
+    margin: { l: 8, r: 16, t: 8, b: 8 }, bargap: 0.25, showlegend: false, separators: ", ",
     hoverlabel: { bgcolor: css("--surface"), bordercolor: css("--border"), font: { color: css("--text"), size: 13 } },
     xaxis: { gridcolor: css("--grid"), zeroline: false, automargin: true, fixedrange: true },
     yaxis: { gridcolor: css("--grid"), zeroline: false, automargin: true, fixedrange: true },
@@ -770,8 +770,9 @@ function renderCharts(rows, prov) {
   const maxCount = Math.max(...asc.map(p => p.count)), minCount = Math.min(...asc.map(p => p.count));
   Plotly.react("c-count", [withColors({
     type: "bar", orientation: "h", x: asc.map(p => p.count), y: asc.map(p => p.provider),
-    customdata: asc.map(p => [p.share, p.mean]),
-    hovertemplate: "<b>%{y}</b><br>%{x} offres (%{customdata[0]:.1f} %)<br>Prix moyen : %{customdata[1]:.2f} €<br><i>Clique pour le résumé</i><extra></extra>",
+    customdata: asc.map(p => [p.share, p.mean,
+      `${fmtInt(p.count)} offres (${p.share.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %)<br>Prix moyen : ${fmtEur(p.mean)}`]),
+    hovertemplate: "<b>%{y}</b><br>%{customdata[2]}<br><i>Clique pour le résumé</i><extra></extra>",
   }, asc.map(p => rampColor(maxCount === minCount ? 1 : (p.count - minCount) / (maxCount - minCount))))],
   baseLayout({ xaxis: { ...baseLayout().xaxis, title: { text: "Offres" } }, yaxis: { ...baseLayout().yaxis, showgrid: false } }), plotCfg);
 
@@ -780,8 +781,12 @@ function renderCharts(rows, prov) {
   const spread = Math.max(...pg.map(p => Math.abs(p.perGb - avg)), 0);
   Plotly.react("c-pergb", [withColors({
     type: "bar", orientation: "h", x: pg.map(p => p.perGb), y: pg.map(p => p.provider),
-    customdata: pg.map(p => [p.count, p.unlimited, p.perGb - avg]),
-    hovertemplate: "<b>%{y}</b><br>%{x:.2f} €/Go (%{customdata[2]:+.2f} € vs moyenne)<br>%{customdata[0]} offres dont %{customdata[1]} illimitées<br><i>Clique pour le résumé</i><extra></extra>",
+    customdata: pg.map(p => {
+      const d = p.perGb - avg;
+      const gap = Math.abs(d) < 0.005 ? "dans la moyenne" : `${fmtEur(Math.abs(d))} ${d < 0 ? "de moins" : "de plus"} que la moyenne (${fmtEur(avg)}/Go)`;
+      return [p.count, p.unlimited, `${fmtEur(p.perGb)}/Go<br>${gap}<br>${fmtInt(p.count)} offres dont ${fmtInt(p.unlimited)} illimitées`];
+    }),
+    hovertemplate: "<b>%{y}</b><br>%{customdata[2]}<br><i>Clique pour le résumé</i><extra></extra>",
   }, pg.map(p => divergingColor(p.perGb, avg, spread)))], baseLayout({
     xaxis: { ...baseLayout().xaxis, title: { text: "€/Go (hors illimité)" } }, yaxis: { ...baseLayout().yaxis, showgrid: false },
     shapes: avg === null ? [] : [{ type: "line", x0: avg, x1: avg, yref: "paper", y0: 0, y1: 1, line: { color: css("--ref"), dash: "dot", width: 1.5 } }],
@@ -795,8 +800,8 @@ function renderCharts(rows, prov) {
   const keys = [...bins.keys()].sort((a, b) => a - b);
   Plotly.react("c-hist", [withColors({
     type: "bar", x: keys.map(k => k + step / 2), y: keys.map(k => bins.get(k)), width: step * 0.85,
-    customdata: keys.map(k => [k, k + step]),
-    hovertemplate: "%{customdata[0]} – %{customdata[1]} €<br>%{y} offres<br><i>Clique pour le résumé</i><extra></extra>",
+    customdata: keys.map(k => [k, k + step, `<b>${fmtEur(k, 0)} – ${fmtEur(k + step, 0)}</b><br>${fmtInt(bins.get(k))} offres`]),
+    hovertemplate: "%{customdata[2]}<br><i>Clique pour le résumé</i><extra></extra>",
   }, keys.map(k => css(k >= THRESHOLD ? "--c-orange" : "--c-blue")))], baseLayout({
     xaxis: { ...baseLayout().xaxis, title: { text: "Prix (€)" }, showgrid: false },
     yaxis: { ...baseLayout().yaxis, title: { text: "Offres" } },
@@ -815,8 +820,9 @@ function renderCharts(rows, prov) {
   const finite = vk.filter(k => k !== Infinity).length;
   Plotly.react("c-volume", [withColors({
     type: "bar", x: vk.map(k => k === Infinity ? "Illimité" : k.toLocaleString("fr-FR") + " Go"), y: vk.map(k => median(vol.get(k))),
-    customdata: vk.map(k => [vol.get(k).length, k === Infinity ? "unlimited" : k]),
-    hovertemplate: "<b>%{x}</b><br>Prix médian : %{y:.2f} €<br>%{customdata[0]} offres<br><i>Clique pour le résumé</i><extra></extra>",
+    customdata: vk.map(k => [vol.get(k).length, k === Infinity ? "unlimited" : k,
+      `Prix médian : ${fmtEur(median(vol.get(k)))}<br>${fmtInt(vol.get(k).length)} offres`]),
+    hovertemplate: "<b>%{x}</b><br>%{customdata[2]}<br><i>Clique pour le résumé</i><extra></extra>",
   }, vk.map((k, i) => k === Infinity ? css("--c-violet") : rampColor(finite > 1 ? i / (finite - 1) : 1)))], baseLayout({
     xaxis: { ...baseLayout().xaxis, type: "category", showgrid: false },
     yaxis: { ...baseLayout().yaxis, title: { text: "Prix médian (€)" } },
