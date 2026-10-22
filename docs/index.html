@@ -21,6 +21,10 @@
     --series-soft: #cde2fb;
     --accent-ink: #1c5cab;
     --ref: #77766f;
+    --c-blue: #2a78d6; --c-orange: #eb6834; --c-aqua: #1baf7a; --c-yellow: #eda100;
+    --c-magenta: #e87ba4; --c-green: #008300; --c-violet: #6250d6; --c-red: #e34948;
+    --good: #0ca30c; --good-ink: #006300; --div-mid: #f0efec;
+    --hero-1: #2a78d6; --hero-2: #6250d6;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -36,6 +40,10 @@
       --series-soft: #184f95;
       --accent-ink: #86b6ef;
       --ref: #9a998f;
+      --c-blue: #3987e5; --c-orange: #d95926; --c-aqua: #199e70; --c-yellow: #c98500;
+      --c-magenta: #d55181; --c-green: #008300; --c-violet: #9085e9; --c-red: #e66767;
+      --good: #0ca30c; --good-ink: #0ca30c; --div-mid: #383835;
+      --hero-1: #1c5cab; --hero-2: #4a3aa7;
     }
   }
   :root[data-theme="dark"] {
@@ -51,6 +59,10 @@
     --series-soft: #184f95;
     --accent-ink: #86b6ef;
     --ref: #9a998f;
+    --c-blue: #3987e5; --c-orange: #d95926; --c-aqua: #199e70; --c-yellow: #c98500;
+    --c-magenta: #d55181; --c-green: #008300; --c-violet: #9085e9; --c-red: #e66767;
+    --good: #0ca30c; --good-ink: #0ca30c; --div-mid: #383835;
+    --hero-1: #1c5cab; --hero-2: #4a3aa7;
   }
 
   * { box-sizing: border-box; }
@@ -59,7 +71,14 @@
     font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
   .wrap { max-width: 1240px; margin: 0 auto; padding: 32px 24px 64px; }
-  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  header {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;
+    background: linear-gradient(120deg, var(--hero-1), var(--hero-2)); color: #fff;
+    border-radius: 16px; padding: 24px 28px; box-shadow: 0 10px 30px -18px var(--hero-2);
+  }
+  header .sub { color: rgba(255,255,255,.88); }
+  header .btn { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.35); color: #fff; }
+  header .btn:hover { background: rgba(255,255,255,.26); border-color: #fff; }
   h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
   h2 { font-size: 17px; margin: 0 0 4px; }
   .sub, .note { color: var(--text-2); margin: 0; }
@@ -112,14 +131,34 @@
 
   /* KPI */
   .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); gap: 12px; }
-  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .kpi {
+    --accent: var(--c-blue);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--surface)), var(--surface) 70%);
+    border: 1px solid var(--border); border-top: 4px solid var(--accent); border-radius: 12px; padding: 12px 16px 14px;
+  }
+  .kpi .label { display: flex; align-items: center; gap: 8px; }
+  .kpi .icon {
+    display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; flex: none;
+    font-size: 13px; font-weight: 700; color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  .kpi.c-orange, .card.c-orange { --accent: var(--c-orange); }
+  .kpi.c-aqua, .card.c-aqua { --accent: var(--c-aqua); }
+  .kpi.c-violet, .card.c-violet { --accent: var(--c-violet); }
+  .kpi.c-magenta, .card.c-magenta { --accent: var(--c-magenta); }
   .kpi .label { font-size: 13px; color: var(--text-2); }
   .kpi .value { font-size: 26px; font-weight: 650; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
   .kpi .hint { font-size: 12px; color: var(--text-3); }
 
   /* Graphiques */
   .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 0; }
+  .card { --accent: var(--c-blue); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 0; }
+  .card h2 { display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 18px; border-radius: 2px; background: var(--accent); flex: none; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--text-2); margin: 6px 0 0; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 12px; height: 12px; border-radius: 3px; background: var(--c); flex: none; }
+  .sw.ramp { width: 36px; background: linear-gradient(90deg, #86b6ef, #184f95); }
+  .sw.line { height: 0; border-top: 2px dotted var(--ref); background: none; width: 18px; border-radius: 0; }
   .chart { height: 360px; margin-top: 8px; }
   .chart.tall { height: 520px; }
   section { margin-top: 16px; }
@@ -138,16 +177,36 @@
     font: inherit; color: inherit; background: none; border: 0; padding: 1px 5px; margin: -1px -5px;
     border-radius: 5px; cursor: pointer; text-align: inherit;
   }
-  .cell-pick:hover { background: var(--series-soft); text-decoration: underline; text-underline-offset: 2px; }
+  .cell-pick { --f: var(--c-blue); }
+  .cell-pick[data-f="country"], .pick[data-f="country"] { --f: var(--c-aqua); }
+  .cell-pick[data-f="display"], .pick[data-f="display"] { --f: var(--c-yellow); }
+  .cell-pick[data-f="validity"], .pick[data-f="validity"] { --f: var(--c-magenta); }
+  .cell-pick[data-f="network"], .pick[data-f="network"] { --f: var(--c-violet); }
+  .cell-pick[data-f="topUp"], .pick[data-f="topUp"] { --f: var(--c-green); }
+  .cell-pick:hover { background: color-mix(in srgb, var(--f) 16%, transparent); text-decoration: underline; text-underline-offset: 2px; }
   .cell-pick:focus-visible { outline: 2px solid var(--series); outline-offset: 1px; }
-  .cell-pick[aria-pressed="true"] { background: var(--series); color: #fff; }
+  .cell-pick[aria-pressed="true"] { background: color-mix(in srgb, var(--f) 26%, transparent); box-shadow: inset 0 0 0 1.5px var(--f); font-weight: 600; }
+  .badge {
+    display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 650; line-height: 1.6;
+    background: color-mix(in srgb, var(--b) 18%, transparent); border: 1px solid color-mix(in srgb, var(--b) 55%, transparent);
+  }
+  .badge.net-4g { --b: var(--c-aqua); }
+  .badge.net-5g { --b: var(--c-violet); }
+  .badge.net-other { --b: var(--text-3); }
+  .yes { color: var(--good-ink); font-weight: 600; }
+  .no { color: var(--text-3); }
+  .tint { display: inline-block; padding: 1px 6px; border-radius: 5px; }
+  .price-high { color: var(--c-orange); font-weight: 650; }
   .picks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .picks:empty { display: none; }
   .pick {
-    font: inherit; font-size: 13px; display: inline-flex; gap: 6px; align-items: center; cursor: pointer;
-    border: 1px solid var(--series); background: var(--series); color: #fff; border-radius: 999px; padding: 3px 10px;
+    --f: var(--c-blue);
+    font: inherit; font-size: 13px; display: inline-flex; gap: 6px; align-items: center; cursor: pointer; color: var(--text);
+    border: 1px solid var(--f); background: color-mix(in srgb, var(--f) 18%, transparent); border-radius: 999px; padding: 3px 10px;
   }
-  .pick.query { background: transparent; color: var(--text); border-style: dashed; }
+  .pick::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--f); }
+  .pick.query::before { display: none; }
+  .pick.query { background: transparent; border-color: var(--text-3); border-style: dashed; }
   .pick:hover span { font-weight: 700; }
   .clear-picks { font-size: 13px; padding: 3px 10px; }
   #search-help code { font-size: 12px; background: var(--bg); padding: 0 3px; border-radius: 3px; }
@@ -254,23 +313,31 @@
 
   <div id="content">
     <div class="grid2">
-      <div class="card"><h2>Nombre d'offres par fournisseur</h2><div class="chart tall" id="c-count"></div></div>
+      <div class="card"><h2>Nombre d'offres par fournisseur</h2><div class="chart tall" id="c-count"></div>
+        <p class="legend"><span><i class="sw ramp"></i>plus foncé = plus d'offres</span></p></div>
       <div class="card"><h2>Prix moyen au Go par fournisseur</h2>
         <div class="chart tall" id="c-pergb"></div>
+        <p class="legend"><span><i class="sw" style="--c: var(--c-blue)"></i>moins cher que la moyenne</span>
+          <span><i class="sw" style="--c: var(--c-red)"></i>plus cher que la moyenne</span>
+          <span><i class="sw line"></i>moyenne</span></p>
         <p class="note">Plus la barre est courte, moins le Go est cher. Forfaits illimités exclus.</p></div>
     </div>
     <div class="grid2">
-      <div class="card"><h2>Distribution des prix</h2><div class="chart" id="c-hist"></div></div>
-      <div class="card"><h2>Prix médian selon le volume de data</h2><div class="chart" id="c-volume"></div></div>
+      <div class="card c-orange"><h2>Distribution des prix</h2><div class="chart" id="c-hist"></div>
+        <p class="legend"><span><i class="sw" style="--c: var(--c-blue)"></i>jusqu'à 100 €</span>
+          <span><i class="sw" style="--c: var(--c-orange)"></i>plus de 100 €</span></p></div>
+      <div class="card c-aqua"><h2>Prix médian selon le volume de data</h2><div class="chart" id="c-volume"></div>
+        <p class="legend"><span><i class="sw ramp"></i>volume croissant</span>
+          <span><i class="sw" style="--c: var(--c-violet)"></i>illimité</span></p></div>
     </div>
 
-    <section class="card">
+    <section class="card c-violet">
       <h2>Répartition par fournisseur</h2>
       <p class="note">Clique sur un fournisseur pour filtrer la liste des offres.</p>
       <div class="table-wrap"><table id="t-providers"></table></div>
     </section>
 
-    <section class="card">
+    <section class="card c-magenta">
       <h2 id="offers-title">Toutes les offres</h2>
       <div class="toolbar">
         <input class="search" id="search" type="search" placeholder="Ex. : japon 5g <20€ >=5go 30j -holafly" aria-label="Rechercher avec plusieurs critères" aria-describedby="search-help">
@@ -592,18 +659,19 @@ function computeStats(rows) {
 function renderKpis(rows) {
   const s = computeStats(rows);
   const cards = [
-    ["Cartes eSIM", fmtInt(s.total_offers), "Offres après filtres"],
-    [`Offres > ${THRESHOLD} €`, fmtInt(s.offers_over_100), "Prix supérieur à 100 €"],
-    ["Prix minimum", fmtEur(s.price_min), ""],
-    ["Prix maximum", fmtEur(s.price_max), ""],
-    ["Prix moyen", fmtEur(s.price_mean), ""],
-    ["Data moyenne / carte", s.data_mean_gb === null ? "—" : s.data_mean_gb.toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " Go", "Hors forfaits illimités"],
-    ["Prix moyen au Go", s.price_per_gb_mean === null ? "—" : fmtEur(s.price_per_gb_mean) + "/Go", "Hors forfaits illimités"],
-    ["Forfaits illimités", fmtInt(s.unlimited_offers), "Exclus des moyennes data"],
-    ["Fournisseurs", fmtInt(s.providers), ""],
+    ["Cartes eSIM", fmtInt(s.total_offers), "Offres après filtres", "c-blue", "#"],
+    [`Offres > ${THRESHOLD} €`, fmtInt(s.offers_over_100), "Prix supérieur à 100 €", "c-orange", "!"],
+    ["Prix minimum", fmtEur(s.price_min), "", "c-orange", "↓"],
+    ["Prix maximum", fmtEur(s.price_max), "", "c-orange", "↑"],
+    ["Prix moyen", fmtEur(s.price_mean), "", "c-orange", "€"],
+    ["Data moyenne / carte", s.data_mean_gb === null ? "—" : s.data_mean_gb.toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " Go", "Hors forfaits illimités", "c-aqua", "Go"],
+    ["Prix moyen au Go", s.price_per_gb_mean === null ? "—" : fmtEur(s.price_per_gb_mean) + "/Go", "Hors forfaits illimités", "c-aqua", "÷"],
+    ["Forfaits illimités", fmtInt(s.unlimited_offers), "Exclus des moyennes data", "c-violet", "∞"],
+    ["Fournisseurs", fmtInt(s.providers), "", "c-magenta", "◆"],
   ];
-  document.getElementById("kpis").innerHTML = cards.map(([l, v, h]) =>
-    `<div class="kpi"><div class="label">${l}</div><div class="value">${v}</div><div class="hint">${h || "&nbsp;"}</div></div>`).join("");
+  document.getElementById("kpis").innerHTML = cards.map(([l, v, h, c, icon]) =>
+    `<div class="kpi ${c}"><div class="label"><span class="icon" aria-hidden="true">${icon}</span>${l}</div>
+      <div class="value">${v}</div><div class="hint">${h || "&nbsp;"}</div></div>`).join("");
 }
 
 // ---------- Agrégation par fournisseur ----------
@@ -633,31 +701,54 @@ function baseLayout(extra = {}) {
 }
 const plotCfg = { displayModeBar: false, responsive: true };
 const bar = (extra) => Object.assign({ type: "bar", marker: { color: css("--series"), line: { color: css("--surface"), width: 1 } } }, extra);
+const withColors = (trace, colors) => Object.assign(trace, { marker: { color: colors, line: { color: css("--surface"), width: 1 } } });
+
+// Couleurs : rampe bleue (magnitude) et bleu <-> rouge autour de la moyenne (écart)
+const RAMP = ["#86b6ef", "#6da7ec", "#5598e7", "#3987e5", "#2a78d6", "#256abf", "#1c5cab", "#184f95"];
+const rampColor = t => RAMP[Math.round(Math.max(0, Math.min(1, t)) * (RAMP.length - 1))];
+const hexRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+function mixHex(a, b, t) {
+  const x = hexRgb(a), y = hexRgb(b);
+  return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, "0")).join("");
+}
+function divergingColor(value, mid, spread) {
+  const d = spread > 0 ? Math.max(-1, Math.min(1, (value - mid) / spread)) : 0;
+  return mixHex(css("--div-mid"), css(d < 0 ? "--c-blue" : "--c-red"), 0.45 + 0.55 * Math.abs(d));
+}
 
 function renderCharts(rows, prov) {
   const asc = [...prov].sort((a, b) => a.count - b.count);
-  Plotly.react("c-count", [bar({
-    orientation: "h", x: asc.map(p => p.count), y: asc.map(p => p.provider),
+  const maxCount = Math.max(...asc.map(p => p.count)), minCount = Math.min(...asc.map(p => p.count));
+  Plotly.react("c-count", [withColors({
+    type: "bar", orientation: "h", x: asc.map(p => p.count), y: asc.map(p => p.provider),
     customdata: asc.map(p => [p.share, p.mean]),
     hovertemplate: "<b>%{y}</b><br>%{x} offres (%{customdata[0]:.1f} %)<br>Prix moyen : %{customdata[1]:.2f} €<extra></extra>",
-  })], baseLayout({ xaxis: { ...baseLayout().xaxis, title: { text: "Offres" } }, yaxis: { ...baseLayout().yaxis, showgrid: false } }), plotCfg);
+  }, asc.map(p => rampColor(maxCount === minCount ? 1 : (p.count - minCount) / (maxCount - minCount))))],
+  baseLayout({ xaxis: { ...baseLayout().xaxis, title: { text: "Offres" } }, yaxis: { ...baseLayout().yaxis, showgrid: false } }), plotCfg);
 
   const pg = prov.filter(p => p.perGb !== null).sort((a, b) => b.perGb - a.perGb);
-  Plotly.react("c-pergb", [bar({
-    orientation: "h", x: pg.map(p => p.perGb), y: pg.map(p => p.provider),
-    customdata: pg.map(p => [p.count, p.unlimited]),
-    hovertemplate: "<b>%{y}</b><br>%{x:.2f} €/Go<br>%{customdata[0]} offres dont %{customdata[1]} illimitées<extra></extra>",
-  })], baseLayout({ xaxis: { ...baseLayout().xaxis, title: { text: "€/Go (hors illimité)" } }, yaxis: { ...baseLayout().yaxis, showgrid: false } }), plotCfg);
+  const avg = computeStats(rows).price_per_gb_mean;
+  const spread = Math.max(...pg.map(p => Math.abs(p.perGb - avg)), 0);
+  Plotly.react("c-pergb", [withColors({
+    type: "bar", orientation: "h", x: pg.map(p => p.perGb), y: pg.map(p => p.provider),
+    customdata: pg.map(p => [p.count, p.unlimited, p.perGb - avg]),
+    hovertemplate: "<b>%{y}</b><br>%{x:.2f} €/Go (%{customdata[2]:+.2f} € vs moyenne)<br>%{customdata[0]} offres dont %{customdata[1]} illimitées<extra></extra>",
+  }, pg.map(p => divergingColor(p.perGb, avg, spread)))], baseLayout({
+    xaxis: { ...baseLayout().xaxis, title: { text: "€/Go (hors illimité)" } }, yaxis: { ...baseLayout().yaxis, showgrid: false },
+    shapes: avg === null ? [] : [{ type: "line", x0: avg, x1: avg, yref: "paper", y0: 0, y1: 1, line: { color: css("--ref"), dash: "dot", width: 1.5 } }],
+    annotations: avg === null ? [] : [{ x: avg, yref: "paper", y: 1, yanchor: "bottom", text: "moy. " + fmtEur(avg), showarrow: false, font: { color: css("--text-2"), size: 12 } }],
+    margin: { l: 8, r: 16, t: 22, b: 8 },
+  }), plotCfg);
 
-  // Histogramme par tranches de 5 €
+  // Histogramme par tranches de 5 € ; les offres > 100 € en orange
   const step = 5, bins = new Map();
   rows.forEach(o => { const b = Math.floor(o.price / step) * step; bins.set(b, (bins.get(b) || 0) + 1); });
   const keys = [...bins.keys()].sort((a, b) => a - b);
-  Plotly.react("c-hist", [bar({
-    x: keys.map(k => k + step / 2), y: keys.map(k => bins.get(k)), width: step * 0.85,
+  Plotly.react("c-hist", [withColors({
+    type: "bar", x: keys.map(k => k + step / 2), y: keys.map(k => bins.get(k)), width: step * 0.85,
     customdata: keys.map(k => [k, k + step]),
     hovertemplate: "%{customdata[0]} – %{customdata[1]} €<br>%{y} offres<extra></extra>",
-  })], baseLayout({
+  }, keys.map(k => css(k >= THRESHOLD ? "--c-orange" : "--c-blue")))], baseLayout({
     xaxis: { ...baseLayout().xaxis, title: { text: "Prix (€)" }, showgrid: false },
     yaxis: { ...baseLayout().yaxis, title: { text: "Offres" } },
     shapes: [{ type: "line", x0: THRESHOLD, x1: THRESHOLD, yref: "paper", y0: 0, y1: 1, line: { color: css("--ref"), dash: "dot", width: 1.5 } }],
@@ -672,11 +763,12 @@ function renderCharts(rows, prov) {
     vol.get(k).push(o.price);
   });
   const vk = [...vol.keys()].sort((a, b) => a - b);
-  Plotly.react("c-volume", [bar({
-    x: vk.map(k => k === Infinity ? "Illimité" : k.toLocaleString("fr-FR") + " Go"), y: vk.map(k => median(vol.get(k))),
+  const finite = vk.filter(k => k !== Infinity).length;
+  Plotly.react("c-volume", [withColors({
+    type: "bar", x: vk.map(k => k === Infinity ? "Illimité" : k.toLocaleString("fr-FR") + " Go"), y: vk.map(k => median(vol.get(k))),
     customdata: vk.map(k => vol.get(k).length),
     hovertemplate: "<b>%{x}</b><br>Prix médian : %{y:.2f} €<br>%{customdata} offres<extra></extra>",
-  })], baseLayout({
+  }, vk.map((k, i) => k === Infinity ? css("--c-violet") : rampColor(finite > 1 ? i / (finite - 1) : 1)))], baseLayout({
     xaxis: { ...baseLayout().xaxis, type: "category", showgrid: false },
     yaxis: { ...baseLayout().yaxis, title: { text: "Prix médian (€)" } },
   }), plotCfg);
@@ -792,8 +884,19 @@ function renderCriteria(criteria, picks) {
   if (html !== lastPicksHtml) { document.getElementById("picks").innerHTML = html; lastPicksHtml = html; }
 }
 
+const networkBadge = n => `<span class="badge ${/^4g$/i.test(n) ? "net-4g" : /^5g$/i.test(n) ? "net-5g" : "net-other"}">${esc(n)}</span>`;
+function perGbCell(o, avg) {
+  if (o.perGb === null) return "—";
+  // Teinte bleue sous la moyenne, rouge au-dessus ; l'intensité suit l'écart relatif
+  const d = Math.max(-1, Math.min(1, (o.perGb - avg) / avg));
+  const pole = d < 0 ? "var(--c-blue)" : "var(--c-red)";
+  return `<span class="tint" style="background: color-mix(in srgb, ${pole} ${Math.round(8 + 30 * Math.abs(d))}%, transparent)"
+    title="${d < 0 ? "Moins cher" : "Plus cher"} que la moyenne (${fmtEur(avg)}/Go)">${fmtEur(o.perGb)}</span>`;
+}
+
 function renderOffers(rows) {
   tableRows = searchRows(rows);
+  const avgPerGb = computeStats(rows).price_per_gb_mean;
   const pages = Math.max(1, Math.ceil(tableRows.length / PAGE));
   state.page = Math.min(state.page, pages - 1);
   const slice = tableRows.slice(state.page * PAGE, (state.page + 1) * PAGE);
@@ -802,9 +905,9 @@ function renderOffers(rows) {
     `<thead><tr>${COLS.map(([k, l, , n]) => `<th class="sortable${n ? " num" : ""}" data-k="${k}">${l}${arrow(k)}</th>`).join("")}</tr></thead><tbody>` +
     (slice.length ? slice.map(o => `<tr><td>${cellPick("provider", o, esc(o.provider))}</td><td>${esc(o.name)}</td>
       <td>${cellPick("country", o, esc(o.country))}</td><td>${cellPick("display", o, esc(o.display))}</td>
-      <td class="num">${cellPick("validity", o, o.validity === null ? "—" : o.validity + " j")}</td><td class="num">${fmtEur(o.price)}</td>
-      <td class="num">${o.perGb === null ? "—" : fmtEur(o.perGb)}</td><td>${cellPick("network", o, esc(o.network))}</td>
-      <td>${cellPick("topUp", o, o.topUp ? "Oui" : "Non")}</td></tr>`).join("")
+      <td class="num">${cellPick("validity", o, o.validity === null ? "—" : o.validity + " j")}</td><td class="num${o.price > THRESHOLD ? " price-high" : ""}">${fmtEur(o.price)}</td>
+      <td class="num">${perGbCell(o, avgPerGb)}</td><td>${cellPick("network", o, networkBadge(o.network))}</td>
+      <td>${cellPick("topUp", o, o.topUp ? '<span class="yes">✓ Oui</span>' : '<span class="no">✕ Non</span>')}</td></tr>`).join("")
       : `<tr><td colspan="9" class="empty">Aucune offre ne correspond à ces critères.</td></tr>`) + "</tbody>";
   document.getElementById("page-info").textContent =
     `${fmtInt(tableRows.length)} offres · page ${state.page + 1}/${pages}`;
