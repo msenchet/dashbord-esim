@@ -1,0 +1,46 @@
+# 📶 Dashboard eSIM
+
+Tableau de bord interactif qui compare **5 056 offres eSIM de 18 fournisseurs** (Airalo, Holafly, Saily, Ubigi…), construit en Python avec **Pandas**, **Plotly** et **Streamlit**.
+
+🔗 **Démo en ligne :** _(lien Streamlit Community Cloud à ajouter)_
+
+## Indicateurs
+
+| Indicateur | Valeur (jeu complet) |
+|---|---|
+| Nombre total de cartes eSIM | 5 056 |
+| Offres à plus de 100 € | 56 |
+| Prix minimum / maximum / moyen | 5,36 € / 154,63 € / 29,30 € |
+| Data moyenne par carte (hors illimité) | 14,5 Go |
+| Forfaits illimités | 653 |
+| Prix moyen au Go (bonus) | 3,17 €/Go |
+
+Le dashboard affiche aussi la répartition par fournisseur, le prix moyen au Go par fournisseur, la distribution des prix, le prix médian selon le volume et un tableau consultable avec recherche et export CSV. Tous les indicateurs se recalculent selon les filtres (fournisseur, destination, durée, réseau, prix, type de forfait).
+
+## Méthode de nettoyage (`esim_data.py`)
+
+- Lecture automatique de tous les `.csv` du dossier, avec détection du séparateur (`,` ou `;`).
+- Nom du fournisseur pris dans la colonne `provider`, ou à défaut dans le nom du fichier.
+- Prix convertis en `float` (gère `12,45 €`, `€12.45`, `1 234,50`).
+- Volumes standardisés en Go (`500 Mo` → 0,5 Go, `1 To` → 1 000 Go).
+- Forfaits **illimités** repérés (`Illimité`, `unlimited`) et **exclus** des moyennes de data et de €/Go, pour ne pas les fausser.
+- Le prix au Go est calculé pour chaque offre (`prix / Go`), puis moyenné.
+- Les doublons de SKU sont supprimés.
+
+## Lancer en local
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Pour obtenir les statistiques dans le terminal : `python esim_data.py`
+
+## Structure
+
+```
+app.py                  # interface Streamlit
+esim_data.py            # nettoyage + statistiques
+donnees-test-mybestsim/ # 18 fichiers CSV sources
+requirements.txt
+```
