@@ -17,6 +17,14 @@ Tableau de bord interactif qui compare **5 056 offres eSIM de 18 fournisseurs** 
 
 Le dashboard affiche aussi la répartition par fournisseur, le prix moyen au Go par fournisseur, la distribution des prix, le prix médian selon le volume et un tableau consultable avec recherche et export CSV. Tous les indicateurs se recalculent selon les filtres (fournisseur, destination, durée, réseau, prix, type de forfait).
 
+## Graphiques interactifs
+
+Un clic sur une barre ouvre un **résumé** dans un panneau latéral :
+- **Fournisseur** (offres par fournisseur, €/Go) : prix min/moyen/max, €/Go comparé à la moyenne, part d'illimité, de 5G et de recharge, principales destinations, offres les moins chères et meilleur prix au Go.
+- **Tranche de prix** (histogramme) et **volume de data** : le même résumé, avec les principaux fournisseurs.
+
+« Voir les offres dans la liste ↓ » filtre « Toutes les offres » sur cette sélection et y fait défiler la page. Pour un fournisseur, « Filtrer tout le dashboard » applique aussi le filtre aux indicateurs et aux graphiques.
+
 ## Recherche multicritère
 
 Dans la liste « Toutes les offres », la barre de recherche combine plusieurs critères séparés par des espaces. Une offre doit les remplir tous :

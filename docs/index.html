@@ -242,6 +242,46 @@
     pointer-events: none;
   }
 
+  /* Graphiques cliquables + panneau de résumé */
+  .chart-hint { margin: 0; }
+  .chart .nsewdrag, .chart .bars path { cursor: pointer !important; }
+  .drawer {
+    margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(460px, 100vw); max-width: 100vw; padding: 0; border: 0;
+    background: var(--surface); color: var(--text); box-shadow: -12px 0 40px rgba(0,0,0,.25);
+    flex-direction: column;
+  }
+  .drawer[open] { display: flex; animation: drawer-in .18s ease-out; }
+  .drawer::backdrop { background: rgba(10,10,10,.38); }
+  @keyframes drawer-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .drawer[open] { animation: none; } }
+  .drawer-head {
+    display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; padding: 20px 20px 14px;
+    background: linear-gradient(120deg, color-mix(in srgb, var(--hero-1) 16%, var(--surface)), color-mix(in srgb, var(--hero-2) 14%, var(--surface)));
+    border-bottom: 1px solid var(--border);
+  }
+  .drawer-head h2 { font-size: 22px; margin: 0; }
+  .drawer-head h2::before { display: none; }
+  .eyebrow { margin: 0 0 2px; font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; color: var(--accent-ink); }
+  .close-btn { padding: 4px 10px; flex: none; }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+  .drawer-body h3 { font-size: 14px; margin: 18px 0 8px; color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; }
+  .drawer-actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px 20px 18px; border-top: 1px solid var(--border); }
+  .sum-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sum-tile { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .sum-tile .label { font-size: 12px; color: var(--text-2); }
+  .sum-tile .value { font-size: 20px; font-weight: 650; }
+  .delta { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--text-2); margin-top: 2px; }
+  .sum-shares { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; font-size: 14px; color: var(--text-2); }
+  .sum-shares b { color: var(--text); }
+  .mini { display: grid; grid-template-columns: minmax(0, 1.3fr) 2fr auto; gap: 10px; align-items: center; font-size: 14px; margin: 5px 0; }
+  .mini span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mini-bar { height: 10px; background: var(--grid); border-radius: 5px; overflow: hidden; }
+  .mini-bar i { display: block; height: 100%; background: var(--c-blue); border-radius: 0 4px 4px 0; }
+  .mini b { font-variant-numeric: tabular-nums; }
+  .offer-list { list-style: none; margin: 0; padding: 0; }
+  .offer-list li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .o-price { font-weight: 650; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
   @media (max-width: 820px) {
     .wrap { padding: 20px 16px 48px; }
     .grid2 { grid-template-columns: 1fr; }
@@ -313,9 +353,9 @@
 
   <div id="content">
     <div class="grid2">
-      <div class="card"><h2>Nombre d'offres par fournisseur</h2><div class="chart tall" id="c-count"></div>
+      <div class="card"><h2>Nombre d'offres par fournisseur</h2><p class="note chart-hint">Clique sur une barre pour voir le résumé</p><div class="chart tall" id="c-count"></div>
         <p class="legend"><span><i class="sw ramp"></i>plus foncé = plus d'offres</span></p></div>
-      <div class="card"><h2>Prix moyen au Go par fournisseur</h2>
+      <div class="card"><h2>Prix moyen au Go par fournisseur</h2><p class="note chart-hint">Clique sur une barre pour voir le résumé</p>
         <div class="chart tall" id="c-pergb"></div>
         <p class="legend"><span><i class="sw" style="--c: var(--c-blue)"></i>moins cher que la moyenne</span>
           <span><i class="sw" style="--c: var(--c-red)"></i>plus cher que la moyenne</span>
@@ -323,10 +363,10 @@
         <p class="note">Plus la barre est courte, moins le Go est cher. Forfaits illimités exclus.</p></div>
     </div>
     <div class="grid2">
-      <div class="card c-orange"><h2>Distribution des prix</h2><div class="chart" id="c-hist"></div>
+      <div class="card c-orange"><h2>Distribution des prix</h2><p class="note chart-hint">Clique sur une barre pour voir le résumé</p><div class="chart" id="c-hist"></div>
         <p class="legend"><span><i class="sw" style="--c: var(--c-blue)"></i>jusqu'à 100 €</span>
           <span><i class="sw" style="--c: var(--c-orange)"></i>plus de 100 €</span></p></div>
-      <div class="card c-aqua"><h2>Prix médian selon le volume de data</h2><div class="chart" id="c-volume"></div>
+      <div class="card c-aqua"><h2>Prix médian selon le volume de data</h2><p class="note chart-hint">Clique sur une barre pour voir le résumé</p><div class="chart" id="c-volume"></div>
         <p class="legend"><span><i class="sw ramp"></i>volume croissant</span>
           <span><i class="sw" style="--c: var(--c-violet)"></i>illimité</span></p></div>
     </div>
@@ -357,6 +397,15 @@
     </section>
   </div>
   <div class="empty" id="empty" hidden>Aucune offre ne correspond aux filtres.</div>
+
+  <dialog id="summary" class="drawer" aria-labelledby="sum-title">
+    <div class="drawer-head">
+      <div><p class="eyebrow" id="sum-kind"></p><h2 id="sum-title"></h2><p class="note" id="sum-sub"></p></div>
+      <button class="btn close-btn" id="sum-close" type="button" aria-label="Fermer le résumé">✕</button>
+    </div>
+    <div class="drawer-body" id="sum-body"></div>
+    <div class="drawer-actions" id="sum-actions"></div>
+  </dialog>
 
   <footer>Données : 18 fichiers CSV nettoyés avec Python / Pandas · généré le 22/10/2026 · <a href="api/index.json">API JSON</a></footer>
 </div>
@@ -722,7 +771,7 @@ function renderCharts(rows, prov) {
   Plotly.react("c-count", [withColors({
     type: "bar", orientation: "h", x: asc.map(p => p.count), y: asc.map(p => p.provider),
     customdata: asc.map(p => [p.share, p.mean]),
-    hovertemplate: "<b>%{y}</b><br>%{x} offres (%{customdata[0]:.1f} %)<br>Prix moyen : %{customdata[1]:.2f} €<extra></extra>",
+    hovertemplate: "<b>%{y}</b><br>%{x} offres (%{customdata[0]:.1f} %)<br>Prix moyen : %{customdata[1]:.2f} €<br><i>Clique pour le résumé</i><extra></extra>",
   }, asc.map(p => rampColor(maxCount === minCount ? 1 : (p.count - minCount) / (maxCount - minCount))))],
   baseLayout({ xaxis: { ...baseLayout().xaxis, title: { text: "Offres" } }, yaxis: { ...baseLayout().yaxis, showgrid: false } }), plotCfg);
 
@@ -732,7 +781,7 @@ function renderCharts(rows, prov) {
   Plotly.react("c-pergb", [withColors({
     type: "bar", orientation: "h", x: pg.map(p => p.perGb), y: pg.map(p => p.provider),
     customdata: pg.map(p => [p.count, p.unlimited, p.perGb - avg]),
-    hovertemplate: "<b>%{y}</b><br>%{x:.2f} €/Go (%{customdata[2]:+.2f} € vs moyenne)<br>%{customdata[0]} offres dont %{customdata[1]} illimitées<extra></extra>",
+    hovertemplate: "<b>%{y}</b><br>%{x:.2f} €/Go (%{customdata[2]:+.2f} € vs moyenne)<br>%{customdata[0]} offres dont %{customdata[1]} illimitées<br><i>Clique pour le résumé</i><extra></extra>",
   }, pg.map(p => divergingColor(p.perGb, avg, spread)))], baseLayout({
     xaxis: { ...baseLayout().xaxis, title: { text: "€/Go (hors illimité)" } }, yaxis: { ...baseLayout().yaxis, showgrid: false },
     shapes: avg === null ? [] : [{ type: "line", x0: avg, x1: avg, yref: "paper", y0: 0, y1: 1, line: { color: css("--ref"), dash: "dot", width: 1.5 } }],
@@ -747,7 +796,7 @@ function renderCharts(rows, prov) {
   Plotly.react("c-hist", [withColors({
     type: "bar", x: keys.map(k => k + step / 2), y: keys.map(k => bins.get(k)), width: step * 0.85,
     customdata: keys.map(k => [k, k + step]),
-    hovertemplate: "%{customdata[0]} – %{customdata[1]} €<br>%{y} offres<extra></extra>",
+    hovertemplate: "%{customdata[0]} – %{customdata[1]} €<br>%{y} offres<br><i>Clique pour le résumé</i><extra></extra>",
   }, keys.map(k => css(k >= THRESHOLD ? "--c-orange" : "--c-blue")))], baseLayout({
     xaxis: { ...baseLayout().xaxis, title: { text: "Prix (€)" }, showgrid: false },
     yaxis: { ...baseLayout().yaxis, title: { text: "Offres" } },
@@ -766,12 +815,13 @@ function renderCharts(rows, prov) {
   const finite = vk.filter(k => k !== Infinity).length;
   Plotly.react("c-volume", [withColors({
     type: "bar", x: vk.map(k => k === Infinity ? "Illimité" : k.toLocaleString("fr-FR") + " Go"), y: vk.map(k => median(vol.get(k))),
-    customdata: vk.map(k => vol.get(k).length),
-    hovertemplate: "<b>%{x}</b><br>Prix médian : %{y:.2f} €<br>%{customdata} offres<extra></extra>",
+    customdata: vk.map(k => [vol.get(k).length, k === Infinity ? "unlimited" : k]),
+    hovertemplate: "<b>%{x}</b><br>Prix médian : %{y:.2f} €<br>%{customdata[0]} offres<br><i>Clique pour le résumé</i><extra></extra>",
   }, vk.map((k, i) => k === Infinity ? css("--c-violet") : rampColor(finite > 1 ? i / (finite - 1) : 1)))], baseLayout({
     xaxis: { ...baseLayout().xaxis, type: "category", showgrid: false },
     yaxis: { ...baseLayout().yaxis, title: { text: "Prix médian (€)" } },
   }), plotCfg);
+  bindChartClicks();
 }
 
 // ---------- Recherche multicritère ----------
@@ -1078,6 +1128,119 @@ document.getElementById("api-links").innerHTML = [
   ["api/stats.json", "les 6 statistiques + KPIs bonus"], ["api/providers.json", "répartition par fournisseur"],
   ["api/index.json", "description de l'API"],
 ].map(([p, d]) => { const u = new URL(p, location.href).href; return `<li><a href="${esc(u)}"><code>${esc(u)}</code></a> · ${d}</li>`; }).join("");
+
+// ---------- Clic sur les graphiques : résumé + filtre de la liste ----------
+const summaryEl = document.getElementById("summary");
+const pct = (n, d) => d ? Math.round(n / d * 100) + " %" : "—";
+
+function topCounts(rows, key, n = 5) {
+  const counts = new Map();
+  rows.forEach(o => counts.set(o[key], (counts.get(o[key]) || 0) + 1));
+  return [...counts].sort((a, b) => b[1] - a[1]).slice(0, n);
+}
+
+// Affiche la liste « Toutes les offres » filtrée puis y descend
+function showInList({ picks = {}, search = "" }) {
+  state.picks = Object.fromEntries(Object.entries(picks).map(([f, v]) => [f, new Set([v])]));
+  searchEl.value = search; state.search = search; state.page = 0;
+  renderOffers(current);
+  if (summaryEl.open) summaryEl.close();
+  document.getElementById("offers-title").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function openSummary({ kind, title, rows, groupBy, list, global }) {
+  const s = computeStats(rows), all = computeStats(current);
+  const delta = s.price_per_gb_mean !== null && all.price_per_gb_mean !== null ? s.price_per_gb_mean - all.price_per_gb_mean : null;
+  const deltaHtml = delta === null ? "" : `<span class="delta">
+      <i class="sw" style="--c: var(${delta < 0 ? "--c-blue" : "--c-red"})"></i>
+      ${fmtEur(Math.abs(delta))} ${delta < 0 ? "de moins" : "de plus"} que la moyenne (${fmtEur(all.price_per_gb_mean)})</span>`;
+  const tile = (label, value, extra = "") => `<div class="sum-tile"><div class="label">${label}</div><div class="value">${value}</div>${extra}</div>`;
+  const top = topCounts(rows, groupBy);
+  const topMax = top.length ? top[0][1] : 1;
+  const cheapest = [...rows].sort((a, b) => a.price - b.price).slice(0, 5);
+  const bestGb = rows.filter(o => o.perGb !== null).sort((a, b) => a.perGb - b.perGb)[0];
+  const offerLine = (o, value) => `<li><span class="o-name">${esc(o.name)}${groupBy === "provider" ? ` · <b>${esc(o.provider)}</b>` : ""}</span>
+    <span class="o-price">${value}</span></li>`;
+
+  document.getElementById("sum-kind").textContent = kind;
+  document.getElementById("sum-title").textContent = title;
+  document.getElementById("sum-sub").textContent =
+    `${fmtInt(rows.length)} offre${rows.length > 1 ? "s" : ""} · ${pct(rows.length, current.length)} des offres affichées`;
+  document.getElementById("sum-body").innerHTML = `
+    <div class="sum-grid">
+      ${tile("Prix minimum", fmtEur(s.price_min))}
+      ${tile("Prix moyen", fmtEur(s.price_mean))}
+      ${tile("Prix maximum", fmtEur(s.price_max))}
+      ${tile("Prix moyen au Go", s.price_per_gb_mean === null ? "—" : fmtEur(s.price_per_gb_mean), deltaHtml)}
+    </div>
+    <div class="sum-shares">
+      <span><b>${pct(s.unlimited_offers, rows.length)}</b> illimitées</span>
+      <span><b>${pct(rows.filter(o => /^5g$/i.test(o.network)).length, rows.length)}</b> en 5G</span>
+      <span><b>${pct(rows.filter(o => o.topUp).length, rows.length)}</b> rechargeables</span>
+      <span><b>${fmtInt(new Set(rows.map(o => o.country)).size)}</b> destinations</span>
+    </div>
+    <h3>${groupBy === "country" ? "Destinations principales" : "Fournisseurs principaux"}</h3>
+    <div class="mini-bars">${top.map(([name, n]) => `<div class="mini"><span>${esc(name)}</span>
+      <div class="mini-bar"><i style="width:${Math.max(4, n / topMax * 100)}%"></i></div><b>${fmtInt(n)}</b></div>`).join("")}</div>
+    <h3>Les moins chères</h3>
+    <ul class="offer-list">${cheapest.map(o => offerLine(o, fmtEur(o.price))).join("")}</ul>
+    ${bestGb ? `<h3>Meilleur prix au Go</h3><ul class="offer-list">${offerLine(bestGb, fmtEur(bestGb.perGb) + "/Go")}</ul>` : ""}`;
+
+  const actions = document.getElementById("sum-actions");
+  actions.innerHTML = `<button class="btn primary" type="button" data-act="list">Voir les ${fmtInt(rows.length)} offres dans la liste ↓</button>` +
+    (global ? `<button class="btn" type="button" data-act="global">Filtrer tout le dashboard</button>` : "");
+  actions.onclick = e => {
+    const act = e.target.closest("[data-act]")?.dataset.act;
+    if (act === "list") showInList(list);
+    if (act === "global") { summaryEl.close(); global(); }
+  };
+  if (!summaryEl.open) summaryEl.showModal();
+  document.getElementById("sum-body").scrollTop = 0;
+}
+
+function providerSummary(provider) {
+  openSummary({
+    kind: "Fournisseur", title: provider, groupBy: "country",
+    rows: current.filter(o => o.provider === provider),
+    list: { picks: { provider } },
+    global: () => {
+      state.providers = new Set([provider]); controls.provider.sync(); update();
+      document.getElementById("kpis").scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+  });
+}
+
+function bindChartClicks() {
+  const bind = (id, handler) => {
+    const el = document.getElementById(id);
+    if (el._clickBound) return;
+    el.on("plotly_click", ev => { const p = ev.points && ev.points[0]; if (p) handler(p); });
+    el._clickBound = true;
+  };
+  bind("c-count", p => providerSummary(p.y));
+  bind("c-pergb", p => providerSummary(p.y));
+  bind("c-hist", p => {
+    const [lo, hi] = p.customdata;
+    openSummary({
+      kind: "Tranche de prix", title: `${fmtEur(lo, 0)} – ${fmtEur(hi, 0)}`, groupBy: "provider",
+      rows: current.filter(o => o.price >= lo && o.price < hi),
+      list: { search: `prix>=${lo} prix<${hi}` },
+    });
+  });
+  bind("c-volume", p => {
+    const key = p.customdata[1];
+    const unlimited = key === "unlimited";
+    openSummary({
+      kind: "Volume de data", title: unlimited ? "Forfaits illimités" : p.x, groupBy: "provider",
+      rows: current.filter(o => unlimited ? o.unlimited : o.gb === key),
+      list: { search: unlimited ? "illimité" : `data=${key}go` },
+    });
+  });
+}
+
+document.getElementById("sum-close").addEventListener("click", () => summaryEl.close());
+// Clic sur le fond assombri = fermeture
+summaryEl.addEventListener("click", e => { if (e.target === summaryEl) summaryEl.close(); });
 
 // ---------- Mise à jour globale ----------
 let current = [];
