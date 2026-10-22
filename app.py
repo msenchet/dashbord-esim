@@ -200,11 +200,21 @@ st.dataframe(
 )
 
 st.subheader("Toutes les offres")
-search = st.text_input("Rechercher une offre", placeholder="ex. Japon, 5G, Holafly…")
+search = st.text_input("Rechercher une offre", placeholder="ex. japon 5g -holafly",
+                       help="Chaque mot est un critère (ET), une virgule donne des alternatives (japon,corée), "
+                            "un « - » exclut un mot (-holafly).")
 table = df
 if search:
-    haystack = df[["provider", "product_name", "country_name", "network"]].astype(str).agg(" ".join, axis=1)
-    table = df[haystack.str.contains(search, case=False, regex=False)]
+    haystack = df[["provider", "product_name", "country_name", "network"]].astype(str).agg(" ".join, axis=1).str.lower()
+    mask = pd.Series(True, index=df.index)
+    for word in search.lower().split():
+        exclude = word.startswith("-") and len(word) > 1
+        alternatives = [w for w in word.lstrip("-").split(",") if w]
+        if not alternatives:
+            continue
+        hit = pd.concat([haystack.str.contains(w, regex=False) for w in alternatives], axis=1).any(axis=1)
+        mask &= ~hit if exclude else hit
+    table = df[mask]
 
 columns = ["provider", "product_name", "country_name", "data_display", "validity_days",
            "price", "price_per_gb", "network", "top_up"]

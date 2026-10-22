@@ -133,7 +133,24 @@
   th.sortable:hover { color: var(--text); }
   td.num, th.num { text-align: right; }
   .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between; margin-top: 8px; }
-  .search { width: 260px; }
+  .search { width: 340px; }
+  .cell-pick {
+    font: inherit; color: inherit; background: none; border: 0; padding: 1px 5px; margin: -1px -5px;
+    border-radius: 5px; cursor: pointer; text-align: inherit;
+  }
+  .cell-pick:hover { background: var(--series-soft); text-decoration: underline; text-underline-offset: 2px; }
+  .cell-pick:focus-visible { outline: 2px solid var(--series); outline-offset: 1px; }
+  .cell-pick[aria-pressed="true"] { background: var(--series); color: #fff; }
+  .picks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .picks:empty { display: none; }
+  .pick {
+    font: inherit; font-size: 13px; display: inline-flex; gap: 6px; align-items: center; cursor: pointer;
+    border: 1px solid var(--series); background: var(--series); color: #fff; border-radius: 999px; padding: 3px 10px;
+  }
+  .pick.query { background: transparent; color: var(--text); border-style: dashed; }
+  .pick:hover span { font-weight: 700; }
+  .clear-picks { font-size: 13px; padding: 3px 10px; }
+  #search-help code { font-size: 12px; background: var(--bg); padding: 0 3px; border-radius: 3px; }
   .pager { display: flex; gap: 8px; align-items: center; color: var(--text-2); font-size: 14px; }
   .empty { padding: 40px; text-align: center; color: var(--text-2); }
   footer { margin-top: 32px; font-size: 13px; color: var(--text-3); }
@@ -249,13 +266,14 @@
 
     <section class="card">
       <h2>Répartition par fournisseur</h2>
+      <p class="note">Clique sur un fournisseur pour filtrer la liste des offres.</p>
       <div class="table-wrap"><table id="t-providers"></table></div>
     </section>
 
     <section class="card">
-      <h2>Toutes les offres</h2>
+      <h2 id="offers-title">Toutes les offres</h2>
       <div class="toolbar">
-        <input class="search" id="search" type="search" placeholder="Rechercher : Japon, 5G, Holafly…" aria-label="Rechercher une offre">
+        <input class="search" id="search" type="search" placeholder="Ex. : japon 5g <20€ >=5go 30j -holafly" aria-label="Rechercher avec plusieurs critères" aria-describedby="search-help">
         <div class="pager">
           <button class="btn" id="prev" type="button" aria-label="Page précédente">←</button>
           <span id="page-info"></span>
@@ -263,6 +281,11 @@
           <button class="btn" id="download" type="button">Télécharger CSV</button>
         </div>
       </div>
+      <div class="picks" id="picks" aria-live="polite"></div>
+      <p class="note" id="search-help">Combine les critères avec des espaces : texte (<code>japon</code>, <code>"afrique du sud"</code>),
+        prix (<code>&lt;20€</code>, <code>10-30€</code>), data (<code>&gt;=5go</code>, <code>500mo</code>, <code>illimité</code>),
+        validité (<code>30j</code>), réseau (<code>5g</code>), <code>recharge</code>. Virgule = « ou » (<code>japon,corée</code>),
+        <code>-</code> = exclure (<code>-holafly</code>). Clique sur une valeur du tableau pour l'ajouter comme filtre.</p>
       <div class="table-wrap"><table id="t-offers"></table></div>
     </section>
   </div>
@@ -288,11 +311,14 @@ const css = name => getComputedStyle(document.documentElement).getPropertyValue(
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const sortFr = a => [...a].sort((x, y) => String(x).localeCompare(String(y), "fr"));
 
+const norm = s => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 function makeOffer(o) {
   o.unlimited = !!o.unlimited;
   if (o.unlimited) o.gb = null;
   o.display = o.display || (o.unlimited ? "Illimité" : o.gb === null ? "N/C" : o.gb + " Go");
   o.perGb = o.gb > 0 ? o.price / o.gb : null;
+  o._hay = norm([o.provider, o.name, o.country, o.code, o.network, o.display, o.sku].join(" "));
   return o;
 }
 
@@ -440,12 +466,12 @@ function readAny(text, name) {
 let priceMin = 0, priceMax = 0;
 const state = {
   providers: new Set(), countries: new Set(), validity: new Set(), network: new Set(),
-  kind: "all", pmin: 0, pmax: 0, search: "", page: 0, sortKey: "price", sortDir: 1,
+  kind: "all", pmin: 0, pmax: 0, search: "", picks: {}, page: 0, sortKey: "price", sortDir: 1,
 };
 function resetState() {
   Object.assign(state, {
     providers: new Set(), countries: new Set(), validity: new Set(), network: new Set(),
-    kind: "all", pmin: priceMin, pmax: priceMax, search: "", page: 0, sortKey: "price", sortDir: 1,
+    kind: "all", pmin: priceMin, pmax: priceMax, search: "", picks: {}, page: 0, sortKey: "price", sortDir: 1,
   });
 }
 
@@ -544,7 +570,7 @@ function refreshControls() {
 
 document.getElementById("reset").addEventListener("click", () => {
   resetState(); Object.values(controls).forEach(c => c.sync()); syncPrice();
-  document.getElementById("search").value = ""; update();
+  searchEl.value = ""; update();
 });
 
 // ---------- Statistiques (mêmes formules que compute_stats en Python) ----------
@@ -656,12 +682,81 @@ function renderCharts(rows, prov) {
   }), plotCfg);
 }
 
+// ---------- Recherche multicritère ----------
+// Chaque mot est un critère (ET) ; une virgule donne des alternatives (OU) ; « - » exclut.
+// Ex. : japon 5g <20€ >=5go 30j illimité -holafly "afrique du sud" japon,corée
+const UNIT_FIELD = { "€": "price", eur: "price", euro: "price", euros: "price", go: "gb", gb: "gb", mo: "gb",
+  j: "validity", jour: "validity", jours: "validity" };
+const PREFIX_FIELD = { prix: "price", price: "price", data: "gb", volume: "gb", validite: "validity", duree: "validity" };
+const FIELD_LABEL = { price: ["Prix", " €"], gb: ["Data", " Go"], validity: ["Validité", " j"] };
+const KEYWORDS = {
+  illimite: ["Illimité", o => o.unlimited], illimites: ["Illimité", o => o.unlimited], unlimited: ["Illimité", o => o.unlimited],
+  limite: ["Volume limité", o => !o.unlimited],
+  recharge: ["Rechargeable", o => o.topUp], rechargeable: ["Rechargeable", o => o.topUp],
+  "4g": ["Réseau 4G", o => norm(o.network) === "4g"], "5g": ["Réseau 5G", o => norm(o.network) === "5g"],
+};
+const OPS = { "<": (x, a) => x < a, "<=": (x, a) => x <= a, ">": (x, a) => x > a, ">=": (x, a) => x >= a, "=": (x, a) => Math.abs(x - a) < 1e-9 };
+const OP_LABEL = { "<": "<", "<=": "≤", ">": ">", ">=": "≥", "=": "=" };
+const fmtNum = v => v.toLocaleString("fr-FR", { maximumFractionDigits: 3 });
+const toNum = s => Number(String(s).replace(",", "."));
+
+function textTerm(t) { return { label: `« ${t} »`, test: o => o._hay.includes(t) }; }
+
+function parseTerm(t) {
+  if (KEYWORDS[t]) { const [label, test] = KEYWORDS[t]; return { label, test }; }
+  const m = t.match(/^(?:([a-z]+)[:=]?)?(<=|>=|<|>|=)?(\d+(?:[.,]\d+)?)(?:-(\d+(?:[.,]\d+)?))?(€|[a-z]+)?$/);
+  if (!m) return textTerm(t);
+  const [, prefix, op, a, b, unit] = m;
+  if ((prefix && !PREFIX_FIELD[prefix]) || (unit && !UNIT_FIELD[unit])) return textTerm(t);
+  // Sans préfixe ni unité, un nombre avec opérateur (<20, 10-30) est un prix ; un nombre seul reste du texte.
+  const field = PREFIX_FIELD[prefix] || UNIT_FIELD[unit] || (op || b ? "price" : null);
+  if (!field) return textTerm(t);
+  const k = unit === "mo" ? 0.001 : 1, lo = toNum(a) * k, hi = b === undefined ? null : toNum(b) * k;
+  const [name, suffix] = FIELD_LABEL[field];
+  if (hi !== null) {
+    return { label: `${name} ${fmtNum(lo)} – ${fmtNum(hi)}${suffix}`, test: o => o[field] !== null && o[field] >= lo && o[field] <= hi };
+  }
+  const o2 = op || (field === "price" ? "<=" : "=");  // « 20€ » = budget maximum
+  return { label: `${name} ${OP_LABEL[o2]} ${fmtNum(lo)}${suffix}`, test: o => o[field] !== null && OPS[o2](o[field], lo) };
+}
+
+function parseQuery(q) {
+  const prepared = q.replace(/(<=|>=|<|>|=)\s+/g, "$1").replace(/(\d)\s+(€|eur|go|gb|mo|j|jours?)(?=[\s,]|$)/gi, "$1$2");
+  return (prepared.match(/-?"[^"]*"|\S+/g) || []).map(raw => {
+    const neg = raw.length > 1 && raw.startsWith("-");
+    const body = neg ? raw.slice(1) : raw;
+    const quoted = /^".*"$/.test(body);
+    const alts = quoted ? [norm(body.slice(1, -1)).trim()] : norm(body).split(",").map(s => s.trim());
+    const terms = alts.filter(Boolean).map(t => quoted ? textTerm(t) : parseTerm(t));
+    if (!terms.length) return null;
+    const label = (neg ? "sauf " : "") + terms.map(t => t.label).join(" ou ");
+    return { raw, label, test: o => terms.some(t => t.test(o)) !== neg };
+  }).filter(Boolean);
+}
+
+// Valeurs cliquées dans les tableaux : OU dans une même colonne, ET entre colonnes.
+const PICK_FIELDS = { provider: "Fournisseur", country: "Destination", display: "Data", validity: "Validité", network: "Réseau", topUp: "Recharge" };
+const pickValue = (field, o) => String(o[field]);
+const pickLabel = (field, v) => field === "validity" ? (v === "null" ? "—" : v + " j") : field === "topUp" ? (v === "true" ? "Oui" : "Non") : v;
+function togglePick(field, value) {
+  const set = state.picks[field] || (state.picks[field] = new Set());
+  set.has(value) ? set.delete(value) : set.add(value);
+  if (!set.size) delete state.picks[field];
+  state.page = 0; renderOffers(current);
+}
+const isPicked = (field, value) => !!state.picks[field]?.has(value);
+const cellPick = (field, o, text) => {
+  const v = pickValue(field, o);
+  return `<button type="button" class="cell-pick" data-f="${field}" data-v="${esc(v)}" aria-pressed="${isPicked(field, v)}"
+    title="Filtrer : ${esc(PICK_FIELDS[field])} = ${esc(pickLabel(field, v))}">${text}</button>`;
+};
+
 // ---------- Tableaux ----------
 function renderProviderTable(prov) {
   document.getElementById("t-providers").innerHTML =
     `<thead><tr><th>Fournisseur</th><th class="num">Offres</th><th class="num">Part</th><th class="num">Prix moyen</th>
      <th class="num">Prix min</th><th class="num">Prix max</th><th class="num">Illimitées</th><th class="num">€/Go</th></tr></thead><tbody>` +
-    prov.map(p => `<tr><td>${esc(p.provider)}</td><td class="num">${fmtInt(p.count)}</td>
+    prov.map(p => `<tr><td>${cellPick("provider", p, esc(p.provider))}</td><td class="num">${fmtInt(p.count)}</td>
       <td class="num">${p.share.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %</td>
       <td class="num">${fmtEur(p.mean)}</td><td class="num">${fmtEur(p.min)}</td><td class="num">${fmtEur(p.max)}</td>
       <td class="num">${p.unlimited}</td><td class="num">${p.perGb === null ? "—" : fmtEur(p.perGb)}</td></tr>`).join("") + "</tbody>";
@@ -673,16 +768,30 @@ const COLS = [
   ["validity", "Validité", null, true], ["price", "Prix", null, true], ["perGb", "€/Go", null, true],
   ["network", "Réseau"], ["topUp", "Recharge"],
 ];
-let tableRows = [];
+let tableRows = [], lastPicksHtml = "";
 function searchRows(rows) {
-  const q = state.search.trim().toLowerCase();
-  const out = q ? rows.filter(o => `${o.provider} ${o.name} ${o.country} ${o.network}`.toLowerCase().includes(q)) : rows;
+  const criteria = parseQuery(state.search);
+  const picks = Object.entries(state.picks);
+  const out = rows.filter(o => criteria.every(c => c.test(o)) && picks.every(([f, set]) => set.has(pickValue(f, o))));
+  renderCriteria(criteria, picks);
   const k = COLS.find(c => c[0] === state.sortKey)[2] || state.sortKey, d = state.sortDir;
-  return [...out].sort((a, b) => {
+  return out.sort((a, b) => {
     const x = a[k] ?? Infinity, y = b[k] ?? Infinity;
     return (typeof x === "string" && typeof y === "string" ? x.localeCompare(y, "fr") : x - y) * d;
   });
 }
+
+function renderCriteria(criteria, picks) {
+  const chips = picks.flatMap(([f, set]) => [...set].map(v =>
+    `<button type="button" class="pick" data-f="${f}" data-v="${esc(v)}" aria-label="Retirer ${esc(PICK_FIELDS[f])} ${esc(pickLabel(f, v))}">
+      ${esc(PICK_FIELDS[f])} : ${esc(pickLabel(f, v))} <span aria-hidden="true">✕</span></button>`))
+    .concat(criteria.map(c =>
+      `<button type="button" class="pick query" data-raw="${esc(c.raw)}" aria-label="Retirer le critère ${esc(c.label)}">
+        ${esc(c.label)} <span aria-hidden="true">✕</span></button>`));
+  const html = chips.length ? chips.join("") + `<button type="button" class="btn clear-picks" id="clear-picks">Tout effacer</button>` : "";
+  if (html !== lastPicksHtml) { document.getElementById("picks").innerHTML = html; lastPicksHtml = html; }
+}
+
 function renderOffers(rows) {
   tableRows = searchRows(rows);
   const pages = Math.max(1, Math.ceil(tableRows.length / PAGE));
@@ -691,21 +800,43 @@ function renderOffers(rows) {
   const arrow = k => state.sortKey === k ? (state.sortDir > 0 ? " ↑" : " ↓") : "";
   document.getElementById("t-offers").innerHTML =
     `<thead><tr>${COLS.map(([k, l, , n]) => `<th class="sortable${n ? " num" : ""}" data-k="${k}">${l}${arrow(k)}</th>`).join("")}</tr></thead><tbody>` +
-    (slice.length ? slice.map(o => `<tr><td>${esc(o.provider)}</td><td>${esc(o.name)}</td><td>${esc(o.country)}</td>
-      <td>${esc(o.display)}</td><td class="num">${o.validity === null ? "—" : o.validity + " j"}</td><td class="num">${fmtEur(o.price)}</td>
-      <td class="num">${o.perGb === null ? "—" : fmtEur(o.perGb)}</td><td>${esc(o.network)}</td><td>${o.topUp ? "Oui" : "Non"}</td></tr>`).join("")
-      : `<tr><td colspan="9" class="empty">Aucun résultat pour cette recherche.</td></tr>`) + "</tbody>";
+    (slice.length ? slice.map(o => `<tr><td>${cellPick("provider", o, esc(o.provider))}</td><td>${esc(o.name)}</td>
+      <td>${cellPick("country", o, esc(o.country))}</td><td>${cellPick("display", o, esc(o.display))}</td>
+      <td class="num">${cellPick("validity", o, o.validity === null ? "—" : o.validity + " j")}</td><td class="num">${fmtEur(o.price)}</td>
+      <td class="num">${o.perGb === null ? "—" : fmtEur(o.perGb)}</td><td>${cellPick("network", o, esc(o.network))}</td>
+      <td>${cellPick("topUp", o, o.topUp ? "Oui" : "Non")}</td></tr>`).join("")
+      : `<tr><td colspan="9" class="empty">Aucune offre ne correspond à ces critères.</td></tr>`) + "</tbody>";
   document.getElementById("page-info").textContent =
     `${fmtInt(tableRows.length)} offres · page ${state.page + 1}/${pages}`;
   document.getElementById("prev").disabled = state.page === 0;
   document.getElementById("next").disabled = state.page >= pages - 1;
 }
+
+const searchEl = document.getElementById("search");
+function setSearch(value) { searchEl.value = value; state.search = value; state.page = 0; renderOffers(current); }
+document.addEventListener("click", e => {
+  const cell = e.target.closest(".cell-pick, .pick[data-f]");
+  if (cell) {
+    togglePick(cell.dataset.f, cell.dataset.v);
+    if (cell.closest("#t-providers")) document.getElementById("offers-title").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  const q = e.target.closest(".pick.query");
+  if (q) {
+    // Retire ce mot de la barre de recherche
+    const tokens = state.search.match(/-?"[^"]*"|\S+/g) || [];
+    const i = tokens.indexOf(q.dataset.raw);
+    if (i >= 0) tokens.splice(i, 1);
+    return setSearch(tokens.join(" "));
+  }
+  if (e.target.id === "clear-picks") { state.picks = {}; setSearch(""); }
+});
 document.getElementById("t-offers").addEventListener("click", e => {
   const th = e.target.closest("th[data-k]"); if (!th) return;
   state.sortDir = state.sortKey === th.dataset.k ? -state.sortDir : 1;
   state.sortKey = th.dataset.k; state.page = 0; renderOffers(current);
 });
-document.getElementById("search").addEventListener("input", e => { state.search = e.target.value; state.page = 0; renderOffers(current); });
+searchEl.addEventListener("input", e => { state.search = e.target.value; state.page = 0; renderOffers(current); });
 document.getElementById("prev").addEventListener("click", () => { state.page--; renderOffers(current); });
 document.getElementById("next").addEventListener("click", () => { state.page++; renderOffers(current); });
 

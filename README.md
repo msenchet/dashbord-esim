@@ -17,6 +17,24 @@ Tableau de bord interactif qui compare **5 056 offres eSIM de 18 fournisseurs** 
 
 Le dashboard affiche aussi la répartition par fournisseur, le prix moyen au Go par fournisseur, la distribution des prix, le prix médian selon le volume et un tableau consultable avec recherche et export CSV. Tous les indicateurs se recalculent selon les filtres (fournisseur, destination, durée, réseau, prix, type de forfait).
 
+## Recherche multicritère
+
+Dans la liste « Toutes les offres », la barre de recherche combine plusieurs critères séparés par des espaces. Une offre doit les remplir tous :
+
+| Exemple | Signification |
+|---|---|
+| `japon`, `"afrique du sud"` | texte (fournisseur, offre, destination…), sans tenir compte des accents |
+| `<20€`, `10-30€`, `20€` | prix inférieur à 20 €, entre 10 et 30 €, au plus 20 € |
+| `>=5go`, `500mo`, `illimité`, `limité` | volume de data |
+| `30j`, `<15j` | validité |
+| `5g`, `4g`, `recharge` | réseau, offre rechargeable |
+| `japon,corée` | l'un ou l'autre |
+| `-holafly` | exclure |
+
+Exemple : `japon,corée >=10go 30j <40€ -airalo`
+
+On peut aussi **cliquer sur une valeur** du tableau (fournisseur, destination, data, validité, réseau, recharge) ou sur un fournisseur dans la « Répartition » pour l'ajouter comme filtre. Deux valeurs de la même colonne se combinent en « ou », des colonnes différentes en « et ». Les critères actifs s'affichent en pastilles : clique sur ✕ pour en retirer un. L'export CSV reprend la liste filtrée.
+
 ## Méthode de nettoyage (`esim_data.py`)
 
 - Lecture automatique de tous les `.csv` du dossier, avec détection du séparateur (`,` ou `;`).
