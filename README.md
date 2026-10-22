@@ -81,7 +81,7 @@ Panneau **Données** en haut de la page :
 - **Charger une API** : colle l'URL d'une API qui renvoie du JSON ou du CSV. L'API doit autoriser CORS.
 - Mode **Ajouter** (une offre avec un SKU déjà présent est mise à jour) ou **Remplacer**.
 - **Exporter JSON / CSV** : exporte les offres filtrées, dans le même format que l'API.
-- Lien direct vers une source : `https://<ton-pseudo>.github.io/dashboard-esim/?source=<url-de-l-api>`
+- Lien direct vers une source : `https://<ton-pseudo>.github.io/dashboard-esim/?source=<url-de-l-api>`. La page affiche un avertissement et ne charge les données qu'après un clic sur « Charger ces données ».
 
 Formats acceptés : CSV avec `,` ou `;`, ou JSON (liste d'offres, ou `{"offers": [...]}`). Seule la colonne `price` / `prix` est obligatoire. Les colonnes en français (fournisseur, destination, data, validité, réseau, recharge) sont reconnues, ainsi que `12,45 €`, `500 Mo` et `Illimité`.
 
@@ -100,7 +100,11 @@ Formats acceptés : CSV avec `,` ou `;`, ou JSON (liste d'offres, ou `{"offers":
 Elle permet d'importer par programme et de filtrer côté serveur. GitHub Pages ne peut pas l'exécuter : lance-la en local ou héberge-la (Render, voir plus bas).
 
 ```bash
-uvicorn api:app --reload      # documentation interactive : http://localhost:8000/docs
+# Sur ton ordinateur : écriture sans clé et import d'URL locales autorisés
+ESIM_OPEN_WRITE=1 ESIM_ALLOW_PRIVATE_URLS=1 uvicorn api:app --reload
+# Sur un serveur : une clé est obligatoire pour importer
+ESIM_API_KEY="une-longue-cle-secrete" uvicorn api:app --host 0.0.0.0
+# documentation interactive : http://localhost:8000/docs
 ```
 
 | Méthode | Route | Rôle |
@@ -117,11 +121,14 @@ uvicorn api:app --reload      # documentation interactive : http://localhost:800
 
 ```bash
 curl "http://localhost:8000/api/stats?provider=Holafly&kind=unlimited"
-curl -F "files=@mes_offres.csv" "http://localhost:8000/api/import/file?mode=append"
-curl -X POST http://localhost:8000/api/import/json -H "Content-Type: application/json"      -d '[{"provider":"MonOp","country_name":"Japon","data_gb":10,"validity_days":15,"price":19.9}]'
+curl -H "X-API-Key: $ESIM_API_KEY" -F "files=@mes_offres.csv" \
+     "http://localhost:8000/api/import/file?mode=append"
+curl -X POST http://localhost:8000/api/import/json -H "X-API-Key: $ESIM_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '[{"provider":"MonOp","country_name":"Japon","data_gb":10,"validity_days":15,"price":19.9}]'
 ```
 
-Si la variable `ESIM_API_KEY` est définie, les routes d'écriture exigent l'en-tête `X-API-Key`. Les imports sont gardés en mémoire : ils disparaissent au redémarrage du serveur.
+Les routes d'écriture exigent l'en-tête `X-API-Key`, égal à la variable `ESIM_API_KEY` du serveur. Sans clé configurée, l'écriture est refusée (`ESIM_OPEN_WRITE=1` la rouvre, uniquement en local). Les imports sont gardés en mémoire (200 000 offres au plus) : ils disparaissent au redémarrage du serveur.
 
 Le dashboard en ligne peut afficher les données de l'API : `…github.io/dashboard-esim/?source=https://esim-api.onrender.com/api/offers?limit=10000`
 
@@ -137,6 +144,20 @@ streamlit run app.py
 Pour obtenir les statistiques dans le terminal : `python rapport.py`
 
 La version Streamlit accepte aussi l'import de fichiers et d'URL d'API (barre latérale), ainsi que l'export CSV et JSON.
+
+## Sécurité
+
+| Risque | Protection |
+|---|---|
+| Injection de code via des données importées | tout texte affiché est échappé ; les noms piégés (`<img onerror=…>`, `javascript:`) sont inoffensifs |
+| SSRF : l'API ou Streamlit utilisés pour lire un service interne | l'import par URL refuse les adresses privées, locales et de métadonnées cloud, y compris après une redirection (`ESIM_ALLOW_PRIVATE_URLS=1` lève la restriction, uniquement en local) |
+| Modification des données par un autre site | écriture refusée sans clé API ; la clé est comparée à temps constant |
+| Formules Excel piégées dans les CSV exportés | les textes commençant par `= + - @` sont précédés d'une apostrophe |
+| Fichiers ou réponses démesurés | 20 Mo par fichier (lecture interrompue au-delà), 20 fichiers par import, 200 000 offres en mémoire |
+| Script Plotly modifié sur le CDN | empreinte `integrity` (SRI) : le navigateur refuse un fichier altéré |
+| Lien `?source=` piégé | confirmation obligatoire avant de charger des données externes |
+
+Aucun secret n'est stocké dans le dépôt : la clé API se définit dans l'environnement du serveur (Render la génère via `render.yaml`).
 
 ## Normes du code
 

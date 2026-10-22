@@ -99,6 +99,9 @@ const TERM_RE = new RegExp("^(?:([a-z]+)[:=]?)?(<=|>=|<|>|=)?(\\d+(?:[.,]\\d+)?)
 /** Découpe la recherche en mots, en gardant ensemble un texte entre guillemets. */
 const TOKEN_RE = /-?"[^"]*"|\S+/g;
 
+/** Début de texte qu'Excel exécuterait comme une formule (neutralisé dans les exports CSV). */
+const CSV_FORMULA_RE = /^[=+\-@\t\r]/;
+
 /* ---------- Tableaux ---------- */
 
 /** Colonnes cliquables (filtre par valeur) et leur nom affiché dans les pastilles. */

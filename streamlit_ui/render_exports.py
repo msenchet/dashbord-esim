@@ -4,7 +4,7 @@ import json
 import pandas as pd
 import streamlit as st
 
-from esim import compute_stats, to_records
+from esim import compute_stats, csv_safe, to_records
 
 
 def render_exports(table: pd.DataFrame) -> None:
@@ -19,7 +19,8 @@ def render_exports(table: pd.DataFrame) -> None:
              for key, value in compute_stats(table).items()}
     export = st.columns(2)
     export[0].download_button("Télécharger les offres filtrées (CSV)",
-                              pd.DataFrame(records).to_csv(index=False).encode("utf-8-sig"),
+                              csv_safe(pd.DataFrame(records)).to_csv(index=False)
+                              .encode("utf-8-sig"),
                               file_name="offres_esim_filtrees.csv", mime="text/csv")
     export[1].download_button("Télécharger les offres filtrées (JSON)",
                               json.dumps({"total": len(table), "stats": stats, "offers": records},

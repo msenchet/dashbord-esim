@@ -74,3 +74,22 @@ DEFAULT_NETWORK = "N/C"       # réseau non communiqué
 DEFAULT_CURRENCY = "EUR"      # toutes les offres d'origine sont en euros
 UNKNOWN_VOLUME = "N/C"        # libellé d'un volume impossible à lire
 UNLIMITED_LABEL = "Illimité"  # libellé affiché pour un forfait illimité
+
+# ---------- Sécurité des imports ----------
+
+# Taille maximale (octets) d'un fichier importé ou d'une réponse d'URL : 20 Mo.
+MAX_IMPORT_BYTES = 20 * 1024 * 1024
+
+# Nombre maximal de redirections suivies lors du téléchargement d'une URL.
+MAX_REDIRECTS = 3
+
+# Schémas d'URL autorisés à l'import (pas de file://, ftp://…).
+ALLOWED_URL_SCHEMES = ("http", "https")
+
+# Variable d'environnement qui autorise les adresses privées ou locales (localhost, 192.168…)
+# pour l'import par URL. À n'activer que sur son propre ordinateur : sur un serveur hébergé,
+# elle permettrait de lire des services internes (attaque SSRF).
+ALLOW_PRIVATE_URLS_ENV = "ESIM_ALLOW_PRIVATE_URLS"
+
+# Premiers caractères qu'Excel interprète comme une formule dans une cellule CSV.
+CSV_FORMULA_CHARS = ("=", "+", "-", "@", "\t", "\r")

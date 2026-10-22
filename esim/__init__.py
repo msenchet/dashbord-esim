@@ -23,10 +23,16 @@ Fichiers du paquet :
     provider_breakdown.py      répartition par fournisseur
     json_safe.py               valeur numpy → valeur JSON
     print_report.py            rapport texte dans le terminal
+    assert_public_url.py       refus des adresses privées à l'import par URL (SSRF)
+    fetch_public_url.py        téléchargement sécurisé d'une URL (redirections, taille)
+    csv_safe.py                neutralisation des formules dans les exports CSV
 """
+from .assert_public_url import assert_public_url
 from .clean_offers import clean_offers
 from .compute_stats import compute_stats
-from .config import DATA_DIR, EXPENSIVE_THRESHOLD, EXPORT_COLUMNS
+from .config import DATA_DIR, EXPENSIVE_THRESHOLD, EXPORT_COLUMNS, MAX_IMPORT_BYTES
+from .csv_safe import csv_safe
+from .fetch_public_url import fetch_public_url
 from .json_safe import json_safe
 from .load_offers import load_offers
 from .parse_data_gb import parse_data_gb
@@ -40,7 +46,8 @@ from .to_records import to_records
 
 # Noms rendus disponibles par « from esim import * ».
 __all__ = [
-    "DATA_DIR", "EXPENSIVE_THRESHOLD", "EXPORT_COLUMNS", "clean_offers", "compute_stats",
+    "DATA_DIR", "EXPENSIVE_THRESHOLD", "EXPORT_COLUMNS", "MAX_IMPORT_BYTES",
+    "assert_public_url", "clean_offers", "compute_stats", "csv_safe", "fetch_public_url",
     "json_safe", "load_offers", "parse_data_gb", "parse_price", "prepare_frame", "print_report",
     "provider_breakdown", "read_any", "records_from_json", "to_records",
 ]

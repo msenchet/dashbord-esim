@@ -1,7 +1,8 @@
 """Génération de l'API statique (fichiers JSON et CSV en lecture seule)."""
 import pandas as pd
 
-from esim import EXPORT_COLUMNS, compute_stats, json_safe, provider_breakdown, to_records
+from esim import (EXPORT_COLUMNS, compute_stats, csv_safe, json_safe, provider_breakdown,
+                  to_records)
 
 from .config import API_DIR, API_NOTE, API_ROUTES
 from .write_json import write_json
@@ -28,7 +29,7 @@ def build_api(offers: pd.DataFrame, generated_at: str) -> None:
                compact=True)
     write_json(API_DIR / "stats.json", {"generated_at": generated_at, **stats})
     write_json(API_DIR / "providers.json", {"generated_at": generated_at, "providers": providers})
-    csv = pd.DataFrame(records, columns=EXPORT_COLUMNS).to_csv(index=False)
+    csv = csv_safe(pd.DataFrame(records, columns=EXPORT_COLUMNS)).to_csv(index=False)
     (API_DIR / "offers.csv").write_text("﻿" + csv, encoding="utf-8")
     write_json(API_DIR / "index.json", {
         "name": "API eSIM (statique, lecture seule)",

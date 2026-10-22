@@ -1,5 +1,7 @@
 /**
- * Avec « ?source=<url> » dans l'adresse, remplace les données par celles de cette API.
+ * Avec « ?source=<url> » dans l'adresse, propose de charger les données de cette API.
+ * Rien n'est chargé sans confirmation : un lien piégé ne peut pas afficher de fausses offres
+ * à l'insu du visiteur.
  */
 function loadSourceParam() {
   const source = new URLSearchParams(location.search).get("source");
@@ -7,5 +9,5 @@ function loadSourceParam() {
   imports.mode = "replace";
   syncChips(controls.importMode);
   document.getElementById("api-url").value = source;
-  importUrl(source);
+  confirmExternalSource(source);
 }

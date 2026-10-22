@@ -15,8 +15,15 @@ CORS_ORIGINS = os.environ.get("ESIM_CORS", "*").split(",")
 # Nom de la variable d'environnement contenant la clé API (routes d'écriture protégées).
 API_KEY_ENV = "ESIM_API_KEY"
 
-# Taille maximale acceptée pour un fichier importé ou une réponse d'URL : 20 Mo.
-MAX_IMPORT_BYTES = 20 * 1024 * 1024
+# Variable d'environnement qui ouvre les routes d'écriture sans clé (« 1 » = ouvert).
+# Réservée au développement sur son ordinateur : sans clé, n'importe quel site web visité
+# pourrait remplacer les données, car le CORS autorise toutes les origines.
+OPEN_WRITE_ENV = "ESIM_OPEN_WRITE"
+
+# Nombre maximal de fichiers par import et d'offres gardées en mémoire (protège la mémoire
+# du serveur contre des imports répétés ou démesurés).
+MAX_FILES = 20
+MAX_OFFERS = 200_000
 
 # Délai maximal (secondes) pour télécharger une URL lors d'un import.
 URL_TIMEOUT_SECONDS = 20

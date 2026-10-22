@@ -3,7 +3,10 @@
 Lancer :  uvicorn api:app --reload   puis ouvrir http://localhost:8000/docs
 
 Variables d'environnement :
-    ESIM_API_KEY   si définie, les routes d'écriture (POST/DELETE) exigent l'en-tête X-API-Key
+    ESIM_API_KEY      clé exigée (en-tête X-API-Key) par les routes d'écriture (POST/DELETE) ;
+                      sans elle, l'écriture est refusée
+    ESIM_OPEN_WRITE   « 1 » = écriture sans clé, pour le développement local uniquement
+    ESIM_ALLOW_PRIVATE_URLS  « 1 » = import d'URL locales (localhost…), en local uniquement
     ESIM_CORS      origines autorisées, séparées par des virgules (défaut : *)
 
 Ce fichier ne définit aucune fonction : chaque route vit dans son propre fichier.

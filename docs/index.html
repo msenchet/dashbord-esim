@@ -15,8 +15,11 @@
 <meta name="description"
   content="Dashboard interactif comparant 5 056 offres eSIM de 18 fournisseurs.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📶</text></svg>">
-<!-- Plotly : bibliothèque des graphiques interactifs -->
-<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<!-- Plotly : bibliothèque des graphiques interactifs.
+     integrity : empreinte du fichier ; le navigateur refuse un fichier modifié sur le CDN -->
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"
+  integrity="sha384-cCVCZkAjYNxaYKbM8lsArLznDF/SvMFr1jcZrvOpSTCa0W40ZAdLzHCEulnUa5i7"
+  crossorigin="anonymous"></script>
 <style>
 /*
  * Styles du dashboard eSIM (injectés dans la page par build_site.py).
@@ -691,6 +694,9 @@ const TERM_RE = new RegExp("^(?:([a-z]+)[:=]?)?(<=|>=|<|>|=)?(\\d+(?:[.,]\\d+)?)
 /** Découpe la recherche en mots, en gardant ensemble un texte entre guillemets. */
 const TOKEN_RE = /-?"[^"]*"|\S+/g;
 
+/** Début de texte qu'Excel exécuterait comme une formule (neutralisé dans les exports CSV). */
+const CSV_FORMULA_RE = /^[=+\-@\t\r]/;
+
 /* ---------- Tableaux ---------- */
 
 /** Colonnes cliquables (filtre par valeur) et leur nom affiché dans les pastilles. */
@@ -1153,6 +1159,23 @@ function computeStats(rows) {
   };
 }
 
+/* ===== fonctions/confirmExternalSource.js ===== */
+/**
+ * Affiche un avertissement avec un bouton avant de remplacer les données par une source externe.
+ * L'adresse est insérée en texte (jamais en HTML), donc sans risque d'injection.
+ * @param {string} source URL indiquée dans le paramètre « ?source= »
+ */
+function confirmExternalSource(source) {
+  statusEl.textContent = "⚠ Ce lien veut afficher des données externes, qui ne viennent pas "
+    + "de ce dashboard : " + source + " ";
+  statusEl.dataset.kind = "error";
+  const button = Object.assign(document.createElement("button"), {
+    type: "button", className: "btn", textContent: "Charger ces données",
+  });
+  button.addEventListener("click", () => importUrl(source));
+  statusEl.append(button);
+}
+
 /* ===== fonctions/createChips.js ===== */
 /**
  * Crée la description d'un groupe de pastilles (validité, réseau, forfait, mode d'import).
@@ -1196,12 +1219,16 @@ function css(name) {
 /* ===== fonctions/csvCell.js ===== */
 /**
  * Écrit une valeur dans une cellule CSV (textes entre guillemets, vide pour null).
+ * Un texte qui commence par = + - @ (formule pour Excel) est précédé d'une apostrophe,
+ * pour qu'un fichier importé piégé ne puisse pas exécuter de formule à l'ouverture.
  * @param {*} value valeur
  * @returns {string} cellule CSV
  */
 function csvCell(value) {
   if (value === null) return "";
-  return typeof value === "string" ? `"${value.replace(/"/g, '""')}"` : String(value);
+  if (typeof value !== "string") return String(value);
+  const safe = CSV_FORMULA_RE.test(value) ? "'" + value : value;
+  return `"${safe.replace(/"/g, '""')}"`;
 }
 
 /* ===== fonctions/decodeRaw.js ===== */
@@ -1544,7 +1571,9 @@ function isPicked(field, value) {
 
 /* ===== fonctions/loadSourceParam.js ===== */
 /**
- * Avec « ?source=<url> » dans l'adresse, remplace les données par celles de cette API.
+ * Avec « ?source=<url> » dans l'adresse, propose de charger les données de cette API.
+ * Rien n'est chargé sans confirmation : un lien piégé ne peut pas afficher de fausses offres
+ * à l'insu du visiteur.
  */
 function loadSourceParam() {
   const source = new URLSearchParams(location.search).get("source");
@@ -1552,7 +1581,7 @@ function loadSourceParam() {
   imports.mode = "replace";
   syncChips(controls.importMode);
   document.getElementById("api-url").value = source;
-  importUrl(source);
+  confirmExternalSource(source);
 }
 
 /* ===== fonctions/makeOffer.js ===== */

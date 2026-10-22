@@ -1,6 +1,7 @@
 """Téléchargement mis en cache d'une URL d'API."""
-import httpx
 import streamlit as st
+
+from esim import fetch_public_url
 
 from .config import URL_CACHE_SECONDS, URL_TIMEOUT_SECONDS
 
@@ -8,6 +9,9 @@ from .config import URL_CACHE_SECONDS, URL_TIMEOUT_SECONDS
 @st.cache_data(ttl=URL_CACHE_SECONDS, show_spinner="Appel de l'API…")
 def fetch_url(url: str) -> tuple[str, bytes]:
     """Télécharge une API JSON ou un fichier CSV en ligne (réponse gardée 5 minutes).
+
+    Seules les adresses publiques sont acceptées et la réponse est limitée à 20 Mo
+    (voir esim.fetch_public_url), ce qui protège une application hébergée contre le SSRF.
 
     Args:
         url: adresse à télécharger.
@@ -17,12 +21,12 @@ def fetch_url(url: str) -> tuple[str, bytes]:
         et le contenu brut.
 
     Raises:
-        httpx.HTTPError: si l'URL est injoignable ou répond une erreur.
+        ValueError: adresse refusée ou réponse trop volumineuse.
+        httpx.HTTPError: serveur injoignable ou réponse en erreur.
     """
-    resp = httpx.get(url, timeout=URL_TIMEOUT_SECONDS, follow_redirects=True)
-    resp.raise_for_status()
+    final_url, content_type, content = fetch_public_url(url, URL_TIMEOUT_SECONDS)
     # name : dernier segment du chemin de l'URL, sans paramètres.
-    name = url.split("?")[0].rstrip("/").rsplit("/", 1)[-1] or "api"
-    if "json" in resp.headers.get("content-type", "") and not name.endswith(".json"):
+    name = final_url.split("?")[0].rstrip("/").rsplit("/", 1)[-1] or "api"
+    if "json" in content_type and not name.endswith(".json"):
         name += ".json"
-    return name, resp.content
+    return name, content
