@@ -2,7 +2,9 @@
 
 Tableau de bord interactif qui compare **5 056 offres eSIM de 18 fournisseurs** (Airalo, Holafly, Saily, Ubigi…), construit en Python avec **Pandas**, **Plotly** et **Streamlit**.
 
-🔗 **Démo en ligne :** https://&lt;ton-pseudo&gt;.github.io/dashboard-esim/
+🔗 **Démo en ligne :** https://msenchet.github.io/dashboard-esim/
+
+📐 **Documentation technique** (architecture, flux de données, choix techniques, schémas) : [README_TECHNIQUE.md](README_TECHNIQUE.md)
 
 ## Indicateurs
 
