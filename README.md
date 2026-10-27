@@ -2,7 +2,7 @@
 
 Tableau de bord interactif qui compare **5 056 offres eSIM de 18 fournisseurs** (Airalo, Holafly, Saily, Ubigi…), construit en Python avec **Pandas**, **Plotly** et **Streamlit**.
 
-🔗 **Démo en ligne :** https://msenchet.github.io/dashboard-esim/
+🔗 **Démo en ligne :** https://msenchet.github.io/dashbord-esim/
 
 📐 **Documentation technique** (architecture, flux de données, choix techniques, schémas) : [README_TECHNIQUE.md](README_TECHNIQUE.md)
 
@@ -83,7 +83,7 @@ Panneau **Données** en haut de la page :
 - **Charger une API** : colle l'URL d'une API qui renvoie du JSON ou du CSV. L'API doit autoriser CORS.
 - Mode **Ajouter** (une offre avec un SKU déjà présent est mise à jour) ou **Remplacer**.
 - **Exporter JSON / CSV** : exporte les offres filtrées, dans le même format que l'API.
-- Lien direct vers une source : `https://<ton-pseudo>.github.io/dashboard-esim/?source=<url-de-l-api>`. La page affiche un avertissement et ne charge les données qu'après un clic sur « Charger ces données ».
+- Lien direct vers une source : `https://msenchet.github.io/dashbord-esim/?source=<url-de-l-api>`. La page affiche un avertissement et ne charge les données qu'après un clic sur « Charger ces données ».
 
 Formats acceptés : CSV avec `,` ou `;`, ou JSON (liste d'offres, ou `{"offers": [...]}`). Seule la colonne `price` / `prix` est obligatoire. Les colonnes en français (fournisseur, destination, data, validité, réseau, recharge) sont reconnues, ainsi que `12,45 €`, `500 Mo` et `Illimité`.
 
@@ -132,7 +132,7 @@ curl -X POST http://localhost:8000/api/import/json -H "X-API-Key: $ESIM_API_KEY"
 
 Les routes d'écriture exigent l'en-tête `X-API-Key`, égal à la variable `ESIM_API_KEY` du serveur. Sans clé configurée, l'écriture est refusée (`ESIM_OPEN_WRITE=1` la rouvre, uniquement en local). Les imports sont gardés en mémoire (200 000 offres au plus) : ils disparaissent au redémarrage du serveur.
 
-Le dashboard en ligne peut afficher les données de l'API : `…github.io/dashboard-esim/?source=https://esim-api.onrender.com/api/offers?limit=10000`
+Le dashboard en ligne peut afficher les données de l'API : `…github.io/dashbord-esim/?source=https://esim-api.onrender.com/api/offers?limit=10000`
 
 **Héberger l'API sur Render (gratuit)** : New + → Blueprint → choisis ce dépôt. `render.yaml` configure le service et génère la clé API.
 
